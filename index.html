@@ -2,427 +2,367 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Catch the Love</title>
 
 <style>
-@font-face {
-  font-family: pixelLove;
-  src: url(pixelLove.ttf);
-}
+@font-face { font-family: pixelLove; src: url(pixelLove.ttf); }
 
 html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+  margin: 0; padding: 0; overflow: hidden;
   font-family: pixelLove, sans-serif;
-  background: black;
-  width: 100%;
-  height: 100%;
+  background: #1a1a2e; width: 100%; height: 100%;
+  touch-action: none; user-select: none;
 }
 
 /* ---------- PAGE SYSTEM ---------- */
-
 .page {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  display: none; /* Hide by default */
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 30px;
-  box-sizing: border-box;
-  z-index: 10;
+  position: absolute; width: 100%; height: 100%; top: 0; left: 100%;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; padding: 25px; box-sizing: border-box; z-index: 100;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  visibility: hidden;
+}
+.page.active { transform: translateX(-100%); visibility: visible; }
+
+#titlePage { background: linear-gradient(to bottom, #1a1a40 0%, #4a1d4d 100%); }
+#notePage { background: #4a1d4d; overflow-y: auto; display: block; padding-top: 60px;}
+
+h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; text-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
+
+/* FIXED: Instruction text is now pure white for better visibility */
+.instruction { 
+    font-size: 14px; 
+    color: #ffffff; 
+    letter-spacing: 2px; 
+    line-height: 1.6; 
+    margin-bottom: 40px; 
+    text-transform: uppercase;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-/* Only the active page is shown */
-.page.active {
-  display: flex;
+/* VALENTINE MESSAGE STYLES */
+.valentine-msg { color: #ffc2d1; font-size: 18px; line-height: 1.5; margin-bottom: 30px; text-transform: none; }
+.wiggle-container { display: inline-block; margin-top: 10px; }
+.wiggle { display: inline-block; animation: wiggleAnim 0.3s infinite alternate ease-in-out; color: #ff4d6d; font-size: 24px; font-weight: bold; }
+
+@keyframes wiggleAnim {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
 }
 
-/* ---------- BUTTON ---------- */
-
-button {
-  margin-top: 25px;
-  font-family: pixelLove, sans-serif;
-  font-size: 20px;
-  padding: 12px 22px;
-  border: none;
-  border-radius: 12px;
-  background: white;
-  cursor: pointer;
-  transition: transform 0.1s;
+.play-btn {
+    background: #ff4d6d; border: 4px solid white; border-radius: 40px;
+    padding: 15px 60px; color: white; font-size: 24px; font-weight: bold;
+    cursor: pointer; box-shadow: 0 6px 0 #c02a46; transition: all 0.1s;
+    text-transform: uppercase; letter-spacing: 2px; margin: 20px auto;
+    display: block; width: fit-content;
 }
+.play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c02a46; }
 
-button:active {
-  transform: scale(0.95);
+/* ---------- GAME AREA ---------- */
+#game { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #202040; transition: background 0.5s; }
+#feverOverlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 77, 109, 0.4) 0%, transparent 100%);
+    opacity: 0; transition: opacity 0.5s; z-index: 1; pointer-events: none;
 }
+.fever-active #feverOverlay { opacity: 1; animation: pulseFever 1s infinite alternate; }
+@keyframes pulseFever { from { opacity: 0.3; } to { opacity: 0.7; } }
 
-/* ---------- PAGE BACKGROUNDS ---------- */
+.bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 110%; object-fit: cover; z-index: 0; pointer-events: none; }
+.cloud { position: absolute; background-size: contain; background-repeat: no-repeat; z-index: 2; opacity: 0.6; pointer-events: none; }
 
-#titlePage { background: #ff8fb1; color: white; }
-#notePage { background: #ffc2d1; }
-#gameOverPage { background: #ff8fb1; color: white; }
+.player { position: absolute; bottom: 40px; width: 90px; height: 90px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 10; filter: drop-shadow(0 10px 4px rgba(0,0,0,0.5)); }
+.falling { position: absolute; width: 60px; height: 60px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 5; }
+.score { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 50px; color: white; z-index: 50; text-shadow: 3px 3px 0px rgba(255, 77, 109, 0.5); }
+.health { position: absolute; top: 60px; right: 20px; display: flex; gap: 5px; z-index: 50; }
+.health img { width: 30px; height: 30px; image-rendering: pixelated; }
 
-/* ---------- GAME ---------- */
+#feverBanner { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); font-size: 32px; color: #ffeb3b; text-shadow: 3px 3px 0 #000; z-index: 50; display: none; animation: flashText 0.5s infinite; }
+.popup { position: absolute; font-size: 30px; color: #ffeb3b; text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 60; animation: floatUp 0.8s forwards; }
 
-#gamePage {
-  background: black;
-  padding: 0;
-}
-
-#game {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* Background image fix */
-.bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
-}
-
-/* clouds */
-.cloud {
-  position: absolute;
-  width: 120px;
-  z-index: 1;
-  image-rendering: pixelated;
-  animation: cloudMove linear infinite;
-}
-
-@keyframes cloudMove {
-  from { transform: translateX(-200px); }
-  to { transform: translateX(110vw); }
-}
-
-/* player */
-.player {
-  position: absolute;
-  bottom: 40px;
-  width: 90px;
-  height: 90px;
-  background-image: url("sprites/Bella16bit.gif");
-  background-size: contain;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  z-index: 5;
-  transition: transform 0.1s;
-}
-
-/* falling items */
-.falling {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  z-index: 4;
-}
-
-/* UI Elements */
-.score {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 42px;
-  color: white;
-  text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-  z-index: 20;
-}
-
-.health {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 6px;
-  z-index: 20;
-}
-
-.health img {
-  width: 30px;
-  height: 30px;
-  image-rendering: pixelated;
-}
-
-.combo {
-  position: absolute;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: yellow;
-  font-size: 24px;
-  text-shadow: 1px 1px 2px black;
-  opacity: 0;
-  z-index: 20;
-  pointer-events: none;
-}
+.flash { animation: blink 0.1s infinite; }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+.shake { animation: screenShake 0.3s; }
+@keyframes screenShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 </style>
 </head>
-
 <body>
 
 <div class="page active" id="titlePage">
-  <h1>Catch the Love</h1>
-  <button onclick="goNote()">Next</button>
+  <h1>CATCH THE LOVE</h1>
+  <div class="instruction">USE YOUR FINGER TO MOVE BELLA!<br>AVOID THE BOMBS!</div>
+  <div class="play-btn" onclick="goNote()">PLAY</div>
 </div>
 
 <div class="page" id="notePage">
-  <h2>For you ❤️</h2>
-  <p>Catch everything you love.<br>Good luck!!!</p>
-  <button onclick="startGame()">Play</button>
+  <div class="valentine-msg">
+    <h2 style="color:white; margin-top:0;">Hey Baby, Happy Valentines Day!!!!</h2>
+    <p>I know this is your first valentines having a valentine (me, hehe) so I wanted to make something special so you can remember this day whenever u get bored. It's not much but I hope you have fun!!!!!</p>
+    
+    <div class="wiggle-container">
+      <span class="wiggle" style="animation-delay: 0s;">I</span>
+      <span class="wiggle" style="animation-delay: 0.1s;">love</span>
+      <span class="wiggle" style="animation-delay: 0.2s;">youuu!!</span>
+    </div><br>
+    
+    <div class="wiggle-container">
+      <span class="wiggle" style="animation-delay: 0.3s;">Te</span>
+      <span class="wiggle" style="animation-delay: 0.4s;">Amo!!!!!!!</span>
+    </div><br>
+    
+    <div class="wiggle-container">
+      <span class="wiggle" style="animation-delay: 0.5s;">Volim</span>
+      <span class="wiggle" style="animation-delay: 0.6s;">te!!!!!!!!!!</span>
+    </div>
+  </div>
+  
+  <p style="color:white; font-size: 14px; opacity: 0.8;">(Combo 10 items for FEVER MODE!)</p>
+  <div class="play-btn" onclick="startGame()">START</div>
 </div>
 
 <div class="page" id="gamePage">
   <div id="game">
-    <img class="bg" src="bg.png">
-    <img class="cloud" src="cloud1.png" style="top:60px; animation-duration:45s;">
-    <img class="cloud" src="cloud2.png" style="top:140px; animation-duration:60s;">
-    <img class="cloud" src="cloud3.png" style="top:140px; animation-duration:30s;">
-
-    <div class="score">0</div>
-    <div class="combo" id="comboText"></div>
-    <div class="health" id="health"></div>
-    <div class="player"></div>
+    <div id="feverOverlay"></div>
+    <img class="bg" src="bg.png" onerror="this.style.display='none'">
+    <div class="score" id="scoreDisp">0</div>
+    <div id="feverBanner">FEVER MODE!!</div>
+    <div class="health" id="healthDisp"></div>
+    <div class="player" id="player"></div>
   </div>
 </div>
 
-<div class="page" id="gameOverPage">
-  <h2>Game Over</h2>
-  <p id="finalScore"></p>
-  <p id="highScore"></p>
-  <button onclick="retryGame()">Retry</button>
+<div class="page" id="gameOverPage" style="background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);">
+  <h1 style="color:#ff4d6d;">GAME OVER</h1>
+  <p id="finalScore" style="color:white; font-size:24px;"></p>
+  <div class="play-btn" onclick="retryGame()">RETRY</div>
 </div>
 
-<audio id="titleMusic" src="audio/title.wav" loop></audio>
 <audio id="noteMusic" src="audio/note.wav" loop></audio>
 <audio id="startChime" src="audio/start.wav"></audio>
 <audio id="gameMusic" src="audio/game.wav" loop></audio>
 <audio id="pickupSound" src="audio/pickup.wav"></audio>
+<audio id="hurtSound" src="audio/hurt.wav"></audio>
 <audio id="buttonSound" src="audio/button.wav"></audio>
 
 <script>
-    /* ---------- PAGE NAV ---------- */
-    
-    function showPage(id){
+    const ASSETS = {
+        player: "sprites/Bella16bit.gif",
+        heart: "sprites/Heart.png",
+        bomb: "sprites/Bomb.png",
+        clouds: ["sprites/cloud1.png", "sprites/cloud2.png", "sprites/cloud3.png"],
+        items: ["sprites/BlueFlower.png", "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png", "sprites/Flower1.png", "sprites/Mango.png", "sprites/Racoon.png"]
+    };
+
+    let playerX = window.innerWidth / 2 - 45, targetX = playerX;
+    let score=0, health=3, combo=0, isFever=false, isImmune=false, isGameOver=false;
+    let fallingItems=[], clouds=[];
+    let speedFall=4, spawnInterval, feverTimer=null, immunityTimer=null;
+
+    const playerEl = document.getElementById("player");
+    const gameContainer = document.getElementById("game");
+    const feverBanner = document.getElementById("feverBanner");
+    playerEl.style.backgroundImage = `url(${ASSETS.player})`;
+
+    const snd = {
+        pickup: document.getElementById("pickupSound"),
+        hurt: document.getElementById("hurtSound"),
+        start: document.getElementById("startChime"),
+        btn: document.getElementById("buttonSound"),
+        game: document.getElementById("gameMusic"),
+        note: document.getElementById("noteMusic")
+    };
+
+    function playSfx(audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.play().catch(e => {});
+    }
+
+    function slideTo(id) {
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
+      if(id) document.getElementById(id).classList.add("active");
+    }
+
+    function spawnCloud(randomX = false) {
+        const c = document.createElement("div");
+        c.className = "cloud";
+        const img = ASSETS.clouds[Math.floor(Math.random()*ASSETS.clouds.length)];
+        c.style.backgroundImage = `url(${img})`;
+        c.style.width = (150 + Math.random() * 100) + "px";
+        c.style.height = "80px";
+        c.style.top = (Math.random() * 30) + "%";
+        let x = randomX ? (Math.random() * window.innerWidth) : -250;
+        c.style.left = x + "px";
+        gameContainer.appendChild(c);
+        clouds.push({ el: c, x: x, speed: 0.3 + Math.random() * 0.6 });
+    }
+
+    function goNote(){ 
+        playSfx(snd.btn);
+        snd.note.play().catch(()=>{}); 
+        slideTo("notePage"); 
     }
     
-    /* ---------- AUDIO ---------- */
-    const titleMusic=document.getElementById("titleMusic");
-    const noteMusic=document.getElementById("noteMusic");
-    const startChime=document.getElementById("startChime");
-    const gameMusic=document.getElementById("gameMusic");
-    const pickupSound=document.getElementById("pickupSound");
-    const buttonSound=document.getElementById("buttonSound");
-    
-    titleMusic.volume=.6;
-    noteMusic.volume=.6;
-    gameMusic.volume=.5;
-    
-    /* ---------- NAV ACTIONS ---------- */
-    function goNote(){
-      buttonSound.play().catch(()=>{});
-      titleMusic.pause();
-      noteMusic.play().catch(()=>{});
-      showPage("notePage");
+    function startGame(){ 
+        playSfx(snd.start);
+        snd.note.pause();
+        snd.game.play().catch(()=>{});
+        slideTo("gamePage"); 
+        initGame(); 
     }
     
-    function startGame(){
-      startChime.play().catch(()=>{});
-      setTimeout(()=>gameMusic.play().catch(()=>{}), 600);
-      showPage("gamePage");
-      initGame();
+    function retryGame(){ 
+        playSfx(snd.btn);
+        snd.game.play().catch(()=>{});
+        slideTo("gamePage"); 
+        initGame(); 
     }
-    
-    function retryGame(){
-      buttonSound.play().catch(()=>{});
-      gameMusic.currentTime=0;
-      gameMusic.play().catch(()=>{});
-      showPage("gamePage");
-      initGame();
-    }
-    
-    /* ---------- GAME LOGIC ---------- */
-    const game=document.getElementById("game");
-    const player=document.querySelector(".player");
-    const scoreEl=document.querySelector(".score");
-    const healthEl=document.getElementById("health");
-    const comboText=document.getElementById("comboText");
-    
-    let playerX;
-    let facingRight=true;
-    let score=0;
-    let high=localStorage.getItem("bellaHigh")||0;
-    let health=3;
-    let combo=0;
-    let fallingItems=[];
-    let spawnTimer;
-    let speedFall=3;
-    let spawnRate=850;
-    
-    const sprites=[
-      "sprites/BlueFlower.png", /*"sprites/CatGray.png",*/ /*"sprites/CatOrange.png",*/
-      "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png",
-      "sprites/Flower1.png", "sprites/Heart.png", "sprites/Mango.png", "sprites/Racoon.png"
-    ];
-    
+
     function initGame(){
-      score=0; combo=0; health=3; speedFall=3; spawnRate=850;
-      scoreEl.textContent=0;
-      comboText.style.opacity=0;
-      playerX=window.innerWidth/2-35;
-      player.style.left=playerX+"px";
+      score=0; health=3; combo=0; isGameOver=false; speedFall=4; isImmune=false;
+      if(immunityTimer) clearTimeout(immunityTimer);
+      stopFever();
+      playerEl.classList.remove("flash");
+      document.getElementById("scoreDisp").textContent=0;
+      updateHealthUI();
       fallingItems.forEach(i=>i.el.remove());
       fallingItems=[];
-      updateHealth();
-      clearInterval(spawnTimer);
-      spawnTimer=setInterval(spawnItem,spawnRate);
+      clearInterval(spawnInterval);
+      spawnInterval = setInterval(spawnItem, 800);
     }
-    
-    function updateHealth(){
-      healthEl.innerHTML="";
-      for(let i=0;i<health;i++){
+
+    function updateHealthUI(){
+      const hDisp = document.getElementById("healthDisp");
+      hDisp.innerHTML="";
+      for(let i=0; i<health; i++){
         const img=document.createElement("img");
-        img.src="sprites/Heart.png";
-        healthEl.appendChild(img);
+        img.src=ASSETS.heart;
+        hDisp.appendChild(img);
       }
     }
-    
-    function movePlayer(dir){
-      playerX += dir * 15; // Increased speed slightly for better feel
-      const maxW = window.innerWidth - player.offsetWidth;
-      if(playerX < 0) playerX = 0;
-      if(playerX > maxW) playerX = maxW;
-      
-      player.style.left = playerX + "px";
-      
-      if(dir > 0) player.style.transform = "scaleX(1)";
-      if(dir < 0) player.style.transform = "scaleX(-1)";
+
+    function triggerDamage() {
+        if(isImmune || isGameOver) return;
+        health--;
+        updateHealthUI();
+        playSfx(snd.hurt);
+        gameContainer.classList.add("shake");
+        setTimeout(() => gameContainer.classList.remove("shake"), 300);
+        if(health <= 0) {
+            gameOver();
+        } else {
+            isImmune = true;
+            playerEl.classList.add("flash");
+            if(immunityTimer) clearTimeout(immunityTimer);
+            immunityTimer = setTimeout(() => { 
+                isImmune = false; 
+                playerEl.classList.remove("flash"); 
+            }, 1500);
+        }
     }
-    
-    document.addEventListener("keydown",e=>{
-      if(!document.getElementById("gamePage").classList.contains("active")) return;
-      if(e.key==="ArrowLeft") movePlayer(-1);
-      if(e.key==="ArrowRight") movePlayer(1);
-    });
-    
-    let touchX=null;
-    document.addEventListener("touchstart",e=>touchX=e.touches[0].clientX);
-    document.addEventListener("touchmove",e=>{
-      if(!document.getElementById("gamePage").classList.contains("active")) return;
-      let x=e.touches[0].clientX;
-      movePlayer(x > touchX ? 1 : -1);
-      touchX=x;
-    });
-    
-    function updateCombo(mult){
-      if(combo<=1) { comboText.style.opacity=0; return; }
-      comboText.textContent="COMBO x"+mult;
-      comboText.style.opacity=1;
-      clearTimeout(comboText.timer);
-      comboText.timer=setTimeout(()=>comboText.style.opacity=0,700);
+
+    function startFever() {
+        if(isFever) return;
+        isFever = true;
+        gameContainer.classList.add("fever-active");
+        feverBanner.style.display = "block";
+        if(feverTimer) clearTimeout(feverTimer);
+        feverTimer = setTimeout(() => stopFever(), 10000);
     }
-    
+
+    function stopFever() {
+        isFever = false;
+        combo = 0;
+        gameContainer.classList.remove("fever-active");
+        feverBanner.style.display = "none";
+    }
+
     function spawnItem(){
-      if(!document.getElementById("gamePage").classList.contains("active")) return;
+      if(isGameOver) return;
       const item=document.createElement("div");
       item.classList.add("falling");
-      const isHeart = Math.random() < 0.10 && health < 3;
-
-      if(isHeart){
-        item.dataset.type="heart";
-        item.style.backgroundImage=`url("sprites/Heart.png")`;
-      } else {
-        item.dataset.type="normal";
-        const s = sprites[Math.floor(Math.random()*sprites.length)];
-        item.style.backgroundImage=`url(${s})`;
-      }
-      
-      item.style.left=Math.random()*(window.innerWidth-40)+"px";
-      item.style.top="-50px";
-      game.appendChild(item);
-      fallingItems.push({el:item, y:-50});
+      const rng = Math.random();
+      let type = "normal";
+      let img = ASSETS.items[Math.floor(Math.random()*ASSETS.items.length)];
+      if(rng < 0.15) { type = "bomb"; img = ASSETS.bomb; }
+      else if(rng < 0.22 && health < 3) { type = "heart"; img = ASSETS.heart; }
+      item.style.backgroundImage = `url(${img})`;
+      const x = Math.random()*(window.innerWidth-60);
+      item.style.left = x + "px";
+      item.style.top = "-70px";
+      gameContainer.appendChild(item);
+      fallingItems.push({el:item, y:-70, x: x, type: type});
     }
-    
-    function update(){
-      if(document.getElementById("gamePage").classList.contains("active")){
-        const pRect = player.getBoundingClientRect();
-        
+
+    window.addEventListener("touchmove", e => { e.preventDefault(); targetX = e.touches[0].clientX - 45; }, {passive: false});
+    window.addEventListener("mousemove", e => targetX = e.clientX - 45);
+
+    function update() {
+      if(!isGameOver && document.getElementById("gamePage").classList.contains("active")){
+        let dx = targetX - playerX;
+        playerX += dx * 0.15;
+        playerEl.style.left = playerX + "px";
+        if(Math.abs(dx) > 1) playerEl.style.transform = dx > 0 ? "scaleX(1)" : "scaleX(-1)";
+
+        if(clouds.length < 5) spawnCloud();
+        for(let i=clouds.length-1; i>=0; i--){
+            let c = clouds[i];
+            c.x += c.speed;
+            c.el.style.left = c.x + "px";
+            if(c.x > window.innerWidth + 250) { c.el.remove(); clouds.splice(i, 1); }
+        }
+
+        const pRect = playerEl.getBoundingClientRect();
         for(let i=fallingItems.length-1; i>=0; i--){
           let item = fallingItems[i];
-          item.y += speedFall;
-          item.el.style.top = item.y + "px";
-          
-          const iRect = item.el.getBoundingClientRect();
-          
-          // Collision
-          if(iRect.bottom > pRect.top && iRect.top < pRect.bottom && 
-             iRect.left < pRect.right && iRect.right > pRect.left){
-            
-            if(item.el.dataset.type === "heart"){
-              if(health < 3) health++;
-              updateHealth();
-            } else {
-              combo++;
-              let mult = 1 + Math.floor(combo/5);
-              score += mult;
-              scoreEl.textContent = score;
-              updateCombo(mult);
-              speedFall += 0.05;
-            }
-            
-            pickupSound.currentTime=0;
-            pickupSound.play().catch(()=>{});
-            item.el.remove();
-            fallingItems.splice(i,1);
-            continue;
+          if(isFever && item.type !== "bomb") {
+              let dist = (playerX + 45) - (item.x + 30);
+              if(Math.abs(dist) < 220) { item.x += dist * 0.05; item.el.style.left = item.x + "px"; }
           }
-          
-          // Miss
-          if(item.y > window.innerHeight){
-            if(item.el.dataset.type === "normal"){
-              health--;
-              combo=0;
-              updateHealth();
-              if(health <= 0) gameOver();
+          item.y += isFever ? speedFall * 1.5 : speedFall;
+          item.el.style.top = item.y + "px";
+          const iRect = item.el.getBoundingClientRect();
+
+          if(iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom - 10 && iRect.left < pRect.right - 20 && iRect.right > pRect.left + 20){
+            if(item.type === "bomb") { triggerDamage(); spawnPopup("💥", iRect.left, iRect.top); }
+            else if(item.type === "heart") { health = Math.min(3, health+1); updateHealthUI(); playSfx(snd.pickup); spawnPopup("❤️", iRect.left, iRect.top); }
+            else { 
+                score += isFever ? 2 : 1; combo++; document.getElementById("scoreDisp").textContent = score;
+                playSfx(snd.pickup); spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
+                if(combo >= 10 && !isFever) startFever();
+                speedFall += 0.02;
             }
-            item.el.remove();
-            fallingItems.splice(i,1);
+            item.el.remove(); fallingItems.splice(i,1);
+          } 
+          else if(item.y > window.innerHeight) {
+            if(item.type === "normal" && !isFever) { triggerDamage(); combo = 0; }
+            item.el.remove(); fallingItems.splice(i,1);
           }
         }
       }
       requestAnimationFrame(update);
     }
-    
-    function gameOver(){
-      gameMusic.pause();
-      if(score > high){
-        high = score;
-        localStorage.setItem("bellaHigh", high);
-      }
-      document.getElementById("finalScore").textContent="Score: "+score;
-      document.getElementById("highScore").textContent="Best: "+high;
-      showPage("gameOverPage");
+
+    function spawnPopup(text, x, y) {
+      const p = document.createElement("div");
+      p.className = "popup";
+      p.textContent = text;
+      p.style.left = x + "px"; p.style.top = y + "px";
+      gameContainer.appendChild(p);
+      setTimeout(() => p.remove(), 800);
     }
 
+    function gameOver(){
+      isGameOver = true;
+      snd.game.pause();
+      document.getElementById("finalScore").textContent="Final Score: " + score;
+      slideTo("gameOverPage");
+    }
+    
+    for(let i=0; i<4; i++) spawnCloud(true);
     update();
 </script>
 </body>
-
 </html>
