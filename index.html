@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catch the Love</title>
+
+<style>
+@font-face {
+  font-family: pixelLove;
+  src: url(pixelLove.ttf);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: pixelLove, sans-serif;
+  background: black;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- PAGE SYSTEM ---------- */
+
+.page {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: none; /* Hide by default */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 30px;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+/* Only the active page is shown */
+.page.active {
+  display: flex;
+}
+
+/* ---------- BUTTON ---------- */
+
+button {
+  margin-top: 25px;
+  font-family: pixelLove, sans-serif;
+  font-size: 20px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+/* ---------- PAGE BACKGROUNDS ---------- */
+
+#titlePage { background: #ff8fb1; color: white; }
+#notePage { background: #ffc2d1; }
+#gameOverPage { background: #ff8fb1; color: white; }
+
+/* ---------- GAME ---------- */
+
+#gamePage {
+  background: black;
+  padding: 0;
+}
+
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Background image fix */
+.bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* clouds */
+.cloud {
+  position: absolute;
+  width: 120px;
+  z-index: 1;
+  image-rendering: pixelated;
+  animation: cloudMove linear infinite;
+}
+
+@keyframes cloudMove {
+  from { transform: translateX(-200px); }
+  to { transform: translateX(110vw); }
+}
+
+/* player */
+.player {
+  position: absolute;
+  bottom: 40px;
+  width: 90px;
+  height: 90px;
+  background-image: url("sprites/Bella16bit.gif");
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  z-index: 5;
+  transition: transform 0.1s;
+}
+
+/* falling items */
+.falling {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  z-index: 4;
+}
+
+/* UI Elements */
+.score {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 42px;
+  color: white;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+  z-index: 20;
+}
+
+.health {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 6px;
+  z-index: 20;
+}
+
+.health img {
+  width: 30px;
+  height: 30px;
+  image-rendering: pixelated;
+}
+
+.combo {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: yellow;
+  font-size: 24px;
+  text-shadow: 1px 1px 2px black;
+  opacity: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="page active" id="titlePage">
+  <h1>Catch the Love</h1>
+  <button onclick="goNote()">Next</button>
+</div>
+
+<div class="page" id="notePage">
+  <h2>For you ❤️</h2>
+  <p>Catch everything you love.<br>Good luck!!!</p>
+  <button onclick="startGame()">Play</button>
+</div>
+
+<div class="page" id="gamePage">
+  <div id="game">
+    <img class="bg" src="bg.png">
+    <img class="cloud" src="cloud1.png" style="top:60px; animation-duration:45s;">
+    <img class="cloud" src="cloud2.png" style="top:140px; animation-duration:60s;">
+    <img class="cloud" src="cloud3.png" style="top:140px; animation-duration:30s;">
+
+    <div class="score">0</div>
+    <div class="combo" id="comboText"></div>
+    <div class="health" id="health"></div>
+    <div class="player"></div>
+  </div>
+</div>
+
+<div class="page" id="gameOverPage">
+  <h2>Game Over</h2>
+  <p id="finalScore"></p>
+  <p id="highScore"></p>
+  <button onclick="retryGame()">Retry</button>
+</div>
+
+<audio id="titleMusic" src="audio/title.wav" loop></audio>
+<audio id="noteMusic" src="audio/note.wav" loop></audio>
+<audio id="startChime" src="audio/start.wav"></audio>
+<audio id="gameMusic" src="audio/game.wav" loop></audio>
+<audio id="pickupSound" src="audio/pickup.wav"></audio>
+<audio id="buttonSound" src="audio/button.wav"></audio>
+
+<script>
+    /* ---------- PAGE NAV ---------- */
+    
+    function showPage(id){
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+    
+    /* ---------- AUDIO ---------- */
+    const titleMusic=document.getElementById("titleMusic");
+    const noteMusic=document.getElementById("noteMusic");
+    const startChime=document.getElementById("startChime");
+    const gameMusic=document.getElementById("gameMusic");
+    const pickupSound=document.getElementById("pickupSound");
+    const buttonSound=document.getElementById("buttonSound");
+    
+    titleMusic.volume=.6;
+    noteMusic.volume=.6;
+    gameMusic.volume=.5;
+    
+    /* ---------- NAV ACTIONS ---------- */
+    function goNote(){
+      buttonSound.play().catch(()=>{});
+      titleMusic.pause();
+      noteMusic.play().catch(()=>{});
+      showPage("notePage");
+    }
+    
+    function startGame(){
+      startChime.play().catch(()=>{});
+      setTimeout(()=>gameMusic.play().catch(()=>{}), 600);
+      showPage("gamePage");
+      initGame();
+    }
+    
+    function retryGame(){
+      buttonSound.play().catch(()=>{});
+      gameMusic.currentTime=0;
+      gameMusic.play().catch(()=>{});
+      showPage("gamePage");
+      initGame();
+    }
+    
+    /* ---------- GAME LOGIC ---------- */
+    const game=document.getElementById("game");
+    const player=document.querySelector(".player");
+    const scoreEl=document.querySelector(".score");
+    const healthEl=document.getElementById("health");
+    const comboText=document.getElementById("comboText");
+    
+    let playerX;
+    let facingRight=true;
+    let score=0;
+    let high=localStorage.getItem("bellaHigh")||0;
+    let health=3;
+    let combo=0;
+    let fallingItems=[];
+    let spawnTimer;
+    let speedFall=3;
+    let spawnRate=850;
+    
+    const sprites=[
+      "sprites/BlueFlower.png", /*"sprites/CatGray.png",*/ /*"sprites/CatOrange.png",*/
+      "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png",
+      "sprites/Flower1.png", "sprites/Heart.png", "sprites/Mango.png", "sprites/Racoon.png"
+    ];
+    
+    function initGame(){
+      score=0; combo=0; health=3; speedFall=3; spawnRate=850;
+      scoreEl.textContent=0;
+      comboText.style.opacity=0;
+      playerX=window.innerWidth/2-35;
+      player.style.left=playerX+"px";
+      fallingItems.forEach(i=>i.el.remove());
+      fallingItems=[];
+      updateHealth();
+      clearInterval(spawnTimer);
+      spawnTimer=setInterval(spawnItem,spawnRate);
+    }
+    
+    function updateHealth(){
+      healthEl.innerHTML="";
+      for(let i=0;i<health;i++){
+        const img=document.createElement("img");
+        img.src="sprites/Heart.png";
+        healthEl.appendChild(img);
+      }
+    }
+    
+    function movePlayer(dir){
+      playerX += dir * 15; // Increased speed slightly for better feel
+      const maxW = window.innerWidth - player.offsetWidth;
+      if(playerX < 0) playerX = 0;
+      if(playerX > maxW) playerX = maxW;
+      
+      player.style.left = playerX + "px";
+      
+      if(dir > 0) player.style.transform = "scaleX(1)";
+      if(dir < 0) player.style.transform = "scaleX(-1)";
+    }
+    
+    document.addEventListener("keydown",e=>{
+      if(!document.getElementById("gamePage").classList.contains("active")) return;
+      if(e.key==="ArrowLeft") movePlayer(-1);
+      if(e.key==="ArrowRight") movePlayer(1);
+    });
+    
+    let touchX=null;
+    document.addEventListener("touchstart",e=>touchX=e.touches[0].clientX);
+    document.addEventListener("touchmove",e=>{
+      if(!document.getElementById("gamePage").classList.contains("active")) return;
+      let x=e.touches[0].clientX;
+      movePlayer(x > touchX ? 1 : -1);
+      touchX=x;
+    });
+    
+    function updateCombo(mult){
+      if(combo<=1) { comboText.style.opacity=0; return; }
+      comboText.textContent="COMBO x"+mult;
+      comboText.style.opacity=1;
+      clearTimeout(comboText.timer);
+      comboText.timer=setTimeout(()=>comboText.style.opacity=0,700);
+    }
+    
+    function spawnItem(){
+      if(!document.getElementById("gamePage").classList.contains("active")) return;
+      const item=document.createElement("div");
+      item.classList.add("falling");
+      const isHeart = Math.random() < 0.10 && health < 3;
+
+      if(isHeart){
+        item.dataset.type="heart";
+        item.style.backgroundImage=`url("sprites/Heart.png")`;
+      } else {
+        item.dataset.type="normal";
+        const s = sprites[Math.floor(Math.random()*sprites.length)];
+        item.style.backgroundImage=`url(${s})`;
+      }
+      
+      item.style.left=Math.random()*(window.innerWidth-40)+"px";
+      item.style.top="-50px";
+      game.appendChild(item);
+      fallingItems.push({el:item, y:-50});
+    }
+    
+    function update(){
+      if(document.getElementById("gamePage").classList.contains("active")){
+        const pRect = player.getBoundingClientRect();
+        
+        for(let i=fallingItems.length-1; i>=0; i--){
+          let item = fallingItems[i];
+          item.y += speedFall;
+          item.el.style.top = item.y + "px";
+          
+          const iRect = item.el.getBoundingClientRect();
+          
+          // Collision
+          if(iRect.bottom > pRect.top && iRect.top < pRect.bottom && 
+             iRect.left < pRect.right && iRect.right > pRect.left){
+            
+            if(item.el.dataset.type === "heart"){
+              if(health < 3) health++;
+              updateHealth();
+            } else {
+              combo++;
+              let mult = 1 + Math.floor(combo/5);
+              score += mult;
+              scoreEl.textContent = score;
+              updateCombo(mult);
+              speedFall += 0.05;
+            }
+            
+            pickupSound.currentTime=0;
+            pickupSound.play().catch(()=>{});
+            item.el.remove();
+            fallingItems.splice(i,1);
+            continue;
+          }
+          
+          // Miss
+          if(item.y > window.innerHeight){
+            if(item.el.dataset.type === "normal"){
+              health--;
+              combo=0;
+              updateHealth();
+              if(health <= 0) gameOver();
+            }
+            item.el.remove();
+            fallingItems.splice(i,1);
+          }
+        }
+      }
+      requestAnimationFrame(update);
+    }
+    
+    function gameOver(){
+      gameMusic.pause();
+      if(score > high){
+        high = score;
+        localStorage.setItem("bellaHigh", high);
+      }
+      document.getElementById("finalScore").textContent="Score: "+score;
+      document.getElementById("highScore").textContent="Best: "+high;
+      showPage("gameOverPage");
+    }
+
+    update();
+</script>
+</body>
+</html>
