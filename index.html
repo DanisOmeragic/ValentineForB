@@ -28,16 +28,39 @@ html, body {
 #titlePage { background: linear-gradient(to bottom, #1a1a40 0%, #4a1d4d 100%); }
 #notePage { background: #4a1d4d; overflow-y: auto; display: block; padding-top: 60px;}
 
-h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; text-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
+h1 { 
+    font-size: 52px; 
+    color: #ff8fb1; 
+    margin-bottom: 20px; 
+    letter-spacing: 4px; 
+    text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+    animation: titleBreath 2s infinite alternate ease-in-out;
+}
+
+@keyframes titleBreath {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+}
 
 .instruction { 
     font-size: 14px; 
     color: #ffffff; 
     letter-spacing: 2px; 
-    line-height: 1.6; 
-    margin-bottom: 40px; 
+    line-height: 1.8; 
+    margin-bottom: 30px; 
     text-transform: uppercase;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    opacity: 0.9;
+}
+
+/* FULLSCREEN TOGGLE */
+.fs-toggle {
+    color: #ffc2d1;
+    font-size: 12px;
+    margin-bottom: 20px;
+    text-decoration: underline;
+    cursor: pointer;
+    letter-spacing: 1px;
 }
 
 /* VALENTINE MESSAGE STYLES */
@@ -92,6 +115,7 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
 <div class="page active" id="titlePage">
   <h1>CATCH THE LOVE</h1>
   <div class="instruction">USE YOUR FINGER TO MOVE BELLA!<br>AVOID THE BOMBS!</div>
+  <div class="fs-toggle" onclick="toggleFullscreen()">[ TOGGLE FULLSCREEN ]</div>
   <div class="play-btn" onclick="goNote()">PLAY</div>
 </div>
 
@@ -179,6 +203,17 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
         audio.play().catch(e => {});
     }
 
+    // FULLSCREEN LOGIC
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => {
+                console.error("Fullscreen failed", e);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
     function slideTo(id) {
       document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
       if(id) document.getElementById(id).classList.add("active");
@@ -205,9 +240,11 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
     }
     
     function startGame(){ 
+        // Try to trigger fullscreen on start for immersion
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+        
         playSfx(snd.start);
         snd.note.pause();
-        snd.game.currentTime = 0;
         snd.game.play().catch(()=>{});
         slideTo("gamePage"); 
         initGame(); 
@@ -215,7 +252,6 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
     
     function retryGame(){ 
         playSfx(snd.btn);
-        snd.game.currentTime = 0;
         snd.game.play().catch(()=>{});
         slideTo("gamePage"); 
         initGame(); 
@@ -327,22 +363,16 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
           const iRect = item.el.getBoundingClientRect();
 
           if(iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom - 10 && iRect.left < pRect.right - 20 && iRect.right > pRect.left + 20){
-            if(item.type === "bomb") { 
-                triggerDamage(); 
-                spawnPopup("💥", iRect.left, iRect.top); 
-            }
+            if(item.type === "bomb") { triggerDamage(); spawnPopup("💥", iRect.left, iRect.top); }
             else if(item.type === "heart") { 
                 health = Math.min(3, health+1); 
                 updateHealthUI(); 
-                playSfx(snd.start); // Heart now uses game start sound!
+                playSfx(snd.start); // Playing start chime for hearts!
                 spawnPopup("❤️", iRect.left, iRect.top); 
             }
             else { 
-                score += isFever ? 2 : 1; 
-                combo++; 
-                document.getElementById("scoreDisp").textContent = score;
-                playSfx(snd.pickup); 
-                spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
+                score += isFever ? 2 : 1; combo++; document.getElementById("scoreDisp").textContent = score;
+                playSfx(snd.pickup); spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
                 if(combo >= 10 && !isFever) startFever();
                 speedFall += 0.02;
             }
