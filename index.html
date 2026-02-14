@@ -20,20 +20,48 @@ html, body {
   position: absolute; width: 100%; height: 100%; top: 0; left: 100%;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   text-align: center; padding: 25px; box-sizing: border-box; z-index: 100;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   visibility: hidden;
 }
 .page.active { transform: translateX(-100%); visibility: visible; }
 
+/* LOADING SCREEN */
+#loadingPage { 
+    left: 0; visibility: visible; 
+    background: #1a1a2e; z-index: 200; 
+}
+#loadingPage.fade-out { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+.loading-bella { width: 100px; height: 100px; image-rendering: pixelated; margin-bottom: 20px; }
+.loading-text { color: #ff8fb1; font-size: 24px; letter-spacing: 4px; animation: pulse 1s infinite; }
+
+/* TRANSITION PARTICLES */
+.particle {
+    position: absolute; pointer-events: none; z-index: 250;
+    font-size: 20px; animation: particleAnim 1s forwards ease-out;
+}
+@keyframes particleAnim {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+/* TITLE ANIMATIONS */
 #titlePage { background: linear-gradient(to bottom, #1a1a40 0%, #4a1d4d 100%); }
+#titlePage.active h1 { animation: slideIn 0.8s ease-out forwards; }
+#titlePage.active .instruction { animation: slideIn 1s ease-out forwards; }
+#titlePage.active .play-btn { animation: slideIn 1.2s ease-out forwards; }
+
+@keyframes slideIn {
+    0% { transform: translateY(50px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
 #notePage { background: #4a1d4d; overflow-y: auto; display: block; padding-top: 60px;}
 
 h1 { 
     font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
     text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
-    animation: titleBreath 2s infinite alternate ease-in-out;
 }
-@keyframes titleBreath { from { transform: scale(1); } to { transform: scale(1.05); } }
 
 .instruction { 
     font-size: 14px; color: #ffffff; letter-spacing: 2px; line-height: 1.8; 
@@ -91,7 +119,12 @@ h1 {
 </head>
 <body>
 
-<div class="page active" id="titlePage">
+<div id="loadingPage" class="page">
+    <img src="sprites/Bella16bit.gif" class="loading-bella">
+    <div class="loading-text">LOADING...</div>
+</div>
+
+<div class="page" id="titlePage">
   <h1>CATCH THE LOVE</h1>
   <div class="instruction">USE YOUR FINGER TO MOVE BELLA!<br>AVOID THE BOMBS!</div>
   <div class="fs-toggle" id="fsBtn">[ TOGGLE FULLSCREEN ]</div>
@@ -172,7 +205,30 @@ h1 {
     const gameContainer = document.getElementById("game");
     playerEl.style.backgroundImage = `url(${ASSETS.player})`;
 
-    // Sequence the "Unlocking" so browser doesn't break
+    // STARTUP LOADING LOGIC
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const lp = document.getElementById('loadingPage');
+            const tp = document.getElementById('titlePage');
+            
+            // Create cool burst particles
+            for(let i=0; i<30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.innerHTML = Math.random() > 0.5 ? "❤️" : "✨";
+                p.style.left = "50%"; p.style.top = "50%";
+                p.style.setProperty('--dx', (Math.random()*600-300) + 'px');
+                p.style.setProperty('--dy', (Math.random()*600-300) + 'px');
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1000);
+            }
+
+            lp.classList.add('fade-out');
+            tp.classList.add('active');
+            setTimeout(() => lp.style.display = 'none', 600);
+        }, 2000);
+    });
+
     async function unlockAudioSequentially() {
         const keys = Object.keys(snd);
         for (const key of keys) {
@@ -185,7 +241,6 @@ h1 {
                     audio.currentTime = 0;
                 } catch(e) {}
                 audio.muted = false;
-                // Tiny yield so the browser can breathe
                 await new Promise(r => setTimeout(r, 50)); 
             }
         }
@@ -201,7 +256,7 @@ h1 {
         let doc = document.documentElement;
         try {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                let rfs = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
+                let rfs = doc.requestFullscreen || doc.webkitRequestFullscreen;
                 if(rfs) rfs.call(doc);
             }
         } catch(e) {}
@@ -212,7 +267,6 @@ h1 {
         document.getElementById(id).classList.add("active");
     }
 
-    // --- BUTTONS ---
     const setupBtn = (id, fn) => {
         const btn = document.getElementById(id);
         const handle = (e) => { e.preventDefault(); fn(); };
@@ -224,24 +278,20 @@ h1 {
     
     setupBtn('playBtnTitle', async () => {
         const btn = document.getElementById('playBtnTitle');
-        btn.innerText = "LOADING..."; // Visual feedback
-        
+        const oldText = btn.innerText;
+        btn.innerText = "STARTING...";
         await unlockAudioSequentially();
-        
         playSfx(snd.btn);
-        
-        // Start note music with a slight delay after unlock
         setTimeout(() => {
             snd.note.play().catch(() => {});
             slideTo("notePage");
-            btn.innerText = "PLAY";
+            btn.innerText = oldText;
         }, 100);
     });
 
     setupBtn('startBtnGame', () => {
         playSfx(snd.start);
         if(snd.note) snd.note.pause();
-        
         setTimeout(() => {
             if(snd.game) {
                 snd.game.currentTime = 0;
@@ -263,7 +313,6 @@ h1 {
         initGame();
     });
 
-    // --- GAME LOGIC ---
     function initGame(){
       score=0; health=3; combo=0; isGameOver=false; speedFall=4; isImmune=false;
       if(immunityTimer) clearTimeout(immunityTimer);
