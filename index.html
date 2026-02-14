@@ -1,14 +1,159 @@
-const ASSETS = {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Catch the Love</title>
+
+<style>
+@font-face { font-family: pixelLove; src: url(pixelLove.ttf); }
+
+html, body {
+  margin: 0; padding: 0; overflow: hidden;
+  font-family: pixelLove, sans-serif;
+  background: #1a1a2e; width: 100%; height: 100%;
+  touch-action: none; user-select: none;
+}
+
+/* ---------- PAGE SYSTEM ---------- */
+.page {
+  position: absolute; width: 100%; height: 100%; top: 0; left: 100%;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; padding: 25px; box-sizing: border-box; z-index: 100;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  visibility: hidden;
+}
+.page.active { transform: translateX(-100%); visibility: visible; }
+
+#titlePage { background: linear-gradient(to bottom, #1a1a40 0%, #4a1d4d 100%); }
+#notePage { background: #4a1d4d; overflow-y: auto; display: block; padding-top: 60px;}
+
+h1 { 
+    font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
+    text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+    animation: titleBreath 2s infinite alternate ease-in-out;
+}
+@keyframes titleBreath { from { transform: scale(1); } to { transform: scale(1.05); } }
+
+.instruction { 
+    font-size: 14px; color: #ffffff; letter-spacing: 2px; line-height: 1.8; 
+    margin-bottom: 30px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.fs-toggle {
+    color: #ffc2d1; font-size: 12px; margin-bottom: 20px; 
+    text-decoration: underline; cursor: pointer; letter-spacing: 1px;
+}
+
+.valentine-msg { color: #ffc2d1; font-size: 18px; line-height: 1.5; margin-bottom: 30px; text-transform: none; }
+.wiggle-container { display: inline-block; margin-top: 10px; }
+.wiggle { display: inline-block; animation: wiggleAnim 0.3s infinite alternate ease-in-out; color: #ff4d6d; font-size: 24px; font-weight: bold; }
+
+@keyframes wiggleAnim { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+.play-btn {
+    background: #ff4d6d; border: 4px solid white; border-radius: 40px;
+    padding: 15px 60px; color: white; font-size: 24px; font-weight: bold;
+    cursor: pointer; box-shadow: 0 6px 0 #c02a46; transition: all 0.1s;
+    text-transform: uppercase; letter-spacing: 2px; margin: 10px auto;
+    display: block; width: fit-content;
+}
+.play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c02a46; }
+
+/* ---------- GAME AREA ---------- */
+#game { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #202040; }
+#feverOverlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(255, 77, 109, 0.4) 0%, transparent 100%);
+    opacity: 0; transition: opacity 0.5s; z-index: 1; pointer-events: none;
+}
+.fever-active #feverOverlay { opacity: 1; animation: pulseFever 1s infinite alternate; }
+@keyframes pulseFever { from { opacity: 0.3; } to { opacity: 0.7; } }
+
+.bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 110%; object-fit: cover; z-index: 0; pointer-events: none; }
+.player { position: absolute; bottom: 40px; width: 90px; height: 90px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 10; filter: drop-shadow(0 10px 4px rgba(0,0,0,0.5)); }
+.falling { position: absolute; width: 60px; height: 60px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 5; }
+.score { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 50px; color: white; z-index: 50; text-shadow: 3px 3px 0px rgba(255, 77, 109, 0.5); }
+.health { position: absolute; top: 60px; right: 20px; display: flex; gap: 5px; z-index: 50; }
+.health img { width: 30px; height: 30px; image-rendering: pixelated; }
+
+#feverBanner { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); font-size: 32px; color: #ffeb3b; text-shadow: 3px 3px 0 #000; z-index: 50; display: none; animation: flashText 0.5s infinite; }
+.popup { position: absolute; font-size: 30px; color: #ffeb3b; text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 60; animation: floatUp 0.8s forwards; }
+
+.flash { animation: blink 0.1s infinite; }
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+.shake { animation: screenShake 0.3s; }
+@keyframes screenShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+@keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="page active" id="titlePage">
+  <h1>CATCH THE LOVE</h1>
+  <div class="instruction">USE YOUR FINGER TO MOVE BELLA!<br>AVOID THE BOMBS!</div>
+  <div class="fs-toggle" id="fsBtn">[ TOGGLE FULLSCREEN ]</div>
+  <div class="play-btn" id="playBtnTitle">PLAY</div>
+</div>
+
+<div class="page" id="notePage">
+  <div class="valentine-msg">
+    <h2 style="color:white; margin-top:0;">Hey Baby, Happy Valentines Day!!!!</h2>
+    <p>I know this is your first valentines having a valentine (me, hehe) so I wanted to make something special so you can remember this day whenever u get bored. It's not much but I hope you have fun!!!!!</p>
+    
+    <div class="wiggle-container">
+      <span class="wiggle" style="animation-delay: 0s;">I</span>
+      <span class="wiggle" style="animation-delay: 0.1s;">love</span>
+      <span class="wiggle" style="animation-delay: 0.2s;">youuu!!</span>
+    </div><br>
+    <div class="wiggle-container">
+      <span class="wiggle" style="animation-delay: 0.3s;">Te</span>
+      <span class="wiggle" style="animation-delay: 0.4s;">Amo!!!!!!!</span>
+    </div><br>
+    <div class="wiggle-container">
+      <span class="wiggle" style="animation-delay: 0.5s;">Volim</span>
+      <span class="wiggle" style="animation-delay: 0.6s;">te!!!!!!!!!!</span>
+    </div>
+  </div>
+  <p style="color:white; font-size: 14px; opacity: 0.8;">(Combo 10 items for FEVER MODE!)</p>
+  <div class="play-btn" id="startBtnGame">START</div>
+</div>
+
+<div class="page" id="gamePage">
+  <div id="game">
+    <div id="feverOverlay"></div>
+    <img class="bg" src="bg.png" onerror="this.style.display='none'">
+    <div class="score" id="scoreDisp">0</div>
+    <div id="feverBanner">FEVER MODE!!</div>
+    <div class="health" id="healthDisp"></div>
+    <div class="player" id="player"></div>
+  </div>
+</div>
+
+<div class="page" id="gameOverPage" style="background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);">
+  <h1 style="color:#ff4d6d;">GAME OVER</h1>
+  <p id="finalScore" style="color:white; font-size:24px;"></p>
+  <div class="play-btn" id="retryBtn">RETRY</div>
+</div>
+
+<audio id="noteMusic" src="audio/note.wav" loop></audio>
+<audio id="startChime" src="audio/start.wav"></audio>
+<audio id="gameMusic" src="audio/game.wav" loop></audio>
+<audio id="pickupSound" src="audio/pickup.wav"></audio>
+<audio id="hurtSound" src="audio/hurt.wav"></audio>
+<audio id="buttonSound" src="audio/button.wav"></audio>
+
+<script>
+    const ASSETS = {
         player: "sprites/Bella16bit.gif",
         heart: "sprites/Heart.png",
         bomb: "sprites/Bomb.png",
-        clouds: ["sprites/cloud1.png", "sprites/cloud2.png", "sprites/cloud3.png"],
         items: ["sprites/BlueFlower.png", "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png", "sprites/Flower1.png", "sprites/Mango.png", "sprites/Racoon.png"]
     };
 
     let playerX = window.innerWidth / 2 - 45, targetX = playerX;
     let score=0, health=3, combo=0, isFever=false, isImmune=false, isGameOver=false;
-    let fallingItems=[], clouds=[];
+    let fallingItems=[];
     let speedFall=4, spawnInterval, feverTimer=null, immunityTimer=null;
 
     const playerEl = document.getElementById("player");
@@ -29,56 +174,59 @@ const ASSETS = {
         if(!audio) return;
         audio.pause();
         audio.currentTime = 0;
-        audio.play().catch(e => {});
+        audio.play().catch(e => console.log("SFX blocked"));
     }
 
     function toggleFullscreen() {
         let doc = document.documentElement;
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            let rfs = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
-            if(rfs) rfs.call(doc).catch(e => {});
-        } else {
-            let efs = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-            if(efs) efs.call(document);
-        }
+        try {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                let rfs = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
+                if(rfs) rfs.call(doc);
+            } else {
+                let efs = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+                if(efs) efs.call(document);
+            }
+        } catch(e) { console.log("FS blocked"); }
     }
 
     function slideTo(id) {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      const target = document.getElementById(id);
-      if(target) target.classList.add("active");
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
     }
 
-    function goNote(){ 
-        playSfx(snd.btn);
-        if(snd.note) snd.note.play().catch(()=>{}); 
-        slideTo("notePage"); 
-    }
+    // --- BUTTON EVENT LISTENERS (CRITICAL FOR MOBILE) ---
+    const setupBtn = (id, fn) => {
+        const btn = document.getElementById(id);
+        btn.addEventListener('click', fn);
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); fn(); });
+    };
+
+    setupBtn('fsBtn', toggleFullscreen);
     
-    function startGame(){ 
+    setupBtn('playBtnTitle', () => {
+        playSfx(snd.btn);
+        snd.note.play().catch(()=>{});
+        slideTo("notePage");
+    });
+
+    setupBtn('startBtnGame', () => {
         playSfx(snd.start);
-        if(snd.note) snd.note.pause();
-        if(snd.game) {
-            snd.game.currentTime = 0;
-            snd.game.play().catch(()=>{});
-        }
-        
-        // Attempt fullscreen but don't let it crash the start logic
-        try { toggleFullscreen(); } catch(e) {}
-        
-        slideTo("gamePage"); 
-        initGame(); 
-    }
-    
-    function retryGame(){ 
+        snd.note.pause();
+        snd.game.currentTime = 0;
+        snd.game.play().catch(()=>{});
+        try { toggleFullscreen(); } catch(e){}
+        slideTo("gamePage");
+        initGame();
+    });
+
+    setupBtn('retryBtn', () => {
         playSfx(snd.btn);
-        if(snd.game) {
-            snd.game.currentTime = 0;
-            snd.game.play().catch(()=>{});
-        }
-        slideTo("gamePage"); 
-        initGame(); 
-    }
+        snd.game.currentTime = 0;
+        snd.game.play().catch(()=>{});
+        slideTo("gamePage");
+        initGame();
+    });
 
     function initGame(){
       score=0; health=3; combo=0; isGameOver=false; speedFall=4; isImmune=false;
@@ -95,7 +243,6 @@ const ASSETS = {
 
     function updateHealthUI(){
       const hDisp = document.getElementById("healthDisp");
-      if(!hDisp) return;
       hDisp.innerHTML="";
       for(let i=0; i<health; i++){
         const img=document.createElement("img");
@@ -111,21 +258,15 @@ const ASSETS = {
         playSfx(snd.hurt);
         gameContainer.classList.add("shake");
         setTimeout(() => gameContainer.classList.remove("shake"), 300);
-        if(health <= 0) {
-            gameOver();
-        } else {
+        if(health <= 0) gameOver();
+        else {
             isImmune = true;
             playerEl.classList.add("flash");
-            if(immunityTimer) clearTimeout(immunityTimer);
-            immunityTimer = setTimeout(() => { 
-                isImmune = false; 
-                playerEl.classList.remove("flash"); 
-            }, 1500);
+            immunityTimer = setTimeout(() => { isImmune = false; playerEl.classList.remove("flash"); }, 1500);
         }
     }
 
     function startFever() {
-        if(isFever) return;
         isFever = true;
         gameContainer.classList.add("fever-active");
         feverBanner.style.display = "block";
@@ -157,10 +298,7 @@ const ASSETS = {
       fallingItems.push({el:item, y:-70, x: x, type: type});
     }
 
-    // Improved touch handling for mobile
-    window.addEventListener("touchmove", e => { 
-        if(e.touches.length > 0) targetX = e.touches[0].clientX - 45;
-    }, {passive: true});
+    window.addEventListener("touchmove", e => { targetX = e.touches[0].clientX - 45; }, {passive: true});
     window.addEventListener("mousemove", e => targetX = e.clientX - 45);
 
     function update() {
@@ -186,7 +324,7 @@ const ASSETS = {
             else if(item.type === "heart") { 
                 health = Math.min(3, health+1); 
                 updateHealthUI(); 
-                playSfx(snd.start); 
+                playSfx(snd.start); // Heart uses start audio
                 spawnPopup("❤️", iRect.left, iRect.top); 
             }
             else { 
@@ -217,9 +355,12 @@ const ASSETS = {
 
     function gameOver(){
       isGameOver = true;
-      if(snd.game) snd.game.pause();
+      snd.game.pause();
       document.getElementById("finalScore").textContent="Final Score: " + score;
       slideTo("gameOverPage");
     }
     
     update();
+</script>
+</body>
+</html>
