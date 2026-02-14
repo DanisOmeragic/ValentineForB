@@ -173,17 +173,16 @@ h1 {
         note: document.getElementById("noteMusic")
     };
 
-    // Pre-loading helper: Forces the browser to load and "warm up" the audio
+    // Pre-loading helper: Silent unlock for mobile
     function preloadSounds() {
         Object.values(snd).forEach(audio => {
             if(audio) {
-                audio.load();
-                // Play and immediately pause to "unlock" the audio context for mobile
-                let p = audio.play();
-                if(p !== undefined) {
-                    p.then(() => { audio.pause(); audio.currentTime = 0; })
-                     .catch(() => { /* expected on some browsers */ });
-                }
+                audio.volume = 0; // Mute first!
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.volume = 1.0; // Reset volume back to full
+                }).catch(e => {});
             }
         });
     }
@@ -220,11 +219,11 @@ h1 {
         c.style.backgroundImage = `url(${img})`;
         c.style.width = (150 + Math.random() * 100) + "px";
         c.style.height = "80px";
-        c.style.top = (Math.random() * 40) + "%"; // Fly in top 40% of screen
+        c.style.top = (Math.random() * 40) + "%";
         let x = randomX ? (Math.random() * window.innerWidth) : -250;
         c.style.left = x + "px";
         gameContainer.appendChild(c);
-        clouds.push({ el: c, x: x, speed: 0.2 + Math.random() * 0.4 }); // Very slow
+        clouds.push({ el: c, x: x, speed: 0.2 + Math.random() * 0.4 });
     }
 
     const setupBtn = (id, fn) => {
@@ -236,9 +235,11 @@ h1 {
     setupBtn('fsBtn', toggleFullscreen);
     
     setupBtn('playBtnTitle', () => {
-        preloadSounds(); // Unlock audio on first real interaction
+        preloadSounds(); 
         playSfx(snd.btn);
-        if(snd.note) snd.note.play().catch(()=>{});
+        // Force start Note Music immediately
+        snd.note.volume = 1.0;
+        snd.note.play().catch(e => console.log("Note music blocked"));
         slideTo("notePage");
     });
 
@@ -246,8 +247,9 @@ h1 {
         playSfx(snd.start);
         if(snd.note) snd.note.pause();
         if(snd.game) {
+            snd.game.volume = 1.0;
             snd.game.currentTime = 0;
-            snd.game.play().catch(()=>{});
+            snd.game.play().catch(e => console.log("Game music blocked"));
         }
         try { toggleFullscreen(); } catch(e){}
         slideTo("gamePage");
@@ -405,7 +407,6 @@ h1 {
       slideTo("gameOverPage");
     }
     
-    // Initial clouds
     for(let i=0; i<4; i++) spawnCloud(true);
     update();
 </script>
