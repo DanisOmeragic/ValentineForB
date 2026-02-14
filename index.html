@@ -30,7 +30,6 @@ html, body {
 
 h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; text-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
 
-/* FIXED: Instruction text is now pure white for better visibility */
 .instruction { 
     font-size: 14px; 
     color: #ffffff; 
@@ -208,6 +207,7 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
     function startGame(){ 
         playSfx(snd.start);
         snd.note.pause();
+        snd.game.currentTime = 0;
         snd.game.play().catch(()=>{});
         slideTo("gamePage"); 
         initGame(); 
@@ -215,6 +215,7 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
     
     function retryGame(){ 
         playSfx(snd.btn);
+        snd.game.currentTime = 0;
         snd.game.play().catch(()=>{});
         slideTo("gamePage"); 
         initGame(); 
@@ -326,11 +327,22 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 10px; letter-spacing: 4px; 
           const iRect = item.el.getBoundingClientRect();
 
           if(iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom - 10 && iRect.left < pRect.right - 20 && iRect.right > pRect.left + 20){
-            if(item.type === "bomb") { triggerDamage(); spawnPopup("💥", iRect.left, iRect.top); }
-            else if(item.type === "heart") { health = Math.min(3, health+1); updateHealthUI(); playSfx(snd.pickup); spawnPopup("❤️", iRect.left, iRect.top); }
+            if(item.type === "bomb") { 
+                triggerDamage(); 
+                spawnPopup("💥", iRect.left, iRect.top); 
+            }
+            else if(item.type === "heart") { 
+                health = Math.min(3, health+1); 
+                updateHealthUI(); 
+                playSfx(snd.start); // Heart now uses game start sound!
+                spawnPopup("❤️", iRect.left, iRect.top); 
+            }
             else { 
-                score += isFever ? 2 : 1; combo++; document.getElementById("scoreDisp").textContent = score;
-                playSfx(snd.pickup); spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
+                score += isFever ? 2 : 1; 
+                combo++; 
+                document.getElementById("scoreDisp").textContent = score;
+                playSfx(snd.pickup); 
+                spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
                 if(combo >= 10 && !isFever) startFever();
                 speedFall += 0.02;
             }
