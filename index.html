@@ -25,58 +25,41 @@ html, body {
 }
 .page.active { transform: translateX(-100%); visibility: visible; }
 
-/* LOADING SCREEN */
-#loadingPage { 
-    left: 0; visibility: visible; 
-    background: #1a1a2e; z-index: 200; 
+/* INITIAL LOADING SCREEN (First 2 Seconds) */
+#introLoading { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #1a1a2e; z-index: 1000; display: flex; 
+    flex-direction: column; justify-content: center; align-items: center;
 }
-#loadingPage.fade-out { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
 .loading-bella { width: 100px; height: 100px; image-rendering: pixelated; margin-bottom: 20px; }
-.loading-text { color: #ff8fb1; font-size: 24px; letter-spacing: 4px; animation: pulse 1s infinite; }
+.loading-text { color: #ff8fb1; font-size: 20px; letter-spacing: 4px; animation: pulse 1s infinite; }
 
 /* TRANSITION PARTICLES */
 .particle {
-    position: absolute; pointer-events: none; z-index: 250;
-    font-size: 20px; animation: particleAnim 1s forwards ease-out;
+    position: absolute; pointer-events: none; z-index: 500;
+    font-size: 24px; animation: particleAnim 1s forwards ease-out;
 }
 @keyframes particleAnim {
-    0% { transform: translate(0,0) scale(1); opacity: 1; }
-    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
 }
 
-/* TITLE ANIMATIONS */
+/* TITLE PAGE STYLING */
 #titlePage { background: linear-gradient(to bottom, #1a1a40 0%, #4a1d4d 100%); }
 #titlePage.active h1 { animation: slideIn 0.8s ease-out forwards; }
 #titlePage.active .instruction { animation: slideIn 1s ease-out forwards; }
-#titlePage.active .play-btn { animation: slideIn 1.2s ease-out forwards; }
 
-@keyframes slideIn {
-    0% { transform: translateY(50px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-}
+@keyframes slideIn { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 #notePage { background: #4a1d4d; overflow-y: auto; display: block; padding-top: 60px;}
 
-h1 { 
-    font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
-    text-shadow: 4px 4px 0px rgba(0,0,0,0.3);
-}
+h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; text-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
+.instruction { font-size: 14px; color: #ffffff; letter-spacing: 2px; line-height: 1.8; margin-bottom: 30px; text-transform: uppercase; }
 
-.instruction { 
-    font-size: 14px; color: #ffffff; letter-spacing: 2px; line-height: 1.8; 
-    margin-bottom: 30px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-}
-
-.fs-toggle {
-    color: #ffc2d1; font-size: 12px; margin-bottom: 20px; 
-    text-decoration: underline; cursor: pointer; letter-spacing: 1px;
-}
-
-.valentine-msg { color: #ffc2d1; font-size: 18px; line-height: 1.5; margin-bottom: 30px; text-transform: none; }
-.wiggle-container { display: inline-block; margin-top: 10px; }
+.fs-toggle { color: #ffc2d1; font-size: 12px; margin-bottom: 20px; text-decoration: underline; cursor: pointer; }
+.valentine-msg { color: #ffc2d1; font-size: 18px; line-height: 1.5; margin-bottom: 30px; }
 .wiggle { display: inline-block; animation: wiggleAnim 0.3s infinite alternate ease-in-out; color: #ff4d6d; font-size: 24px; font-weight: bold; }
-
 @keyframes wiggleAnim { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
 .play-btn {
@@ -90,36 +73,27 @@ h1 {
 
 /* ---------- GAME AREA ---------- */
 #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #202040; }
-#feverOverlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(to bottom, rgba(255, 77, 109, 0.4) 0%, transparent 100%);
-    opacity: 0; transition: opacity 0.5s; z-index: 1; pointer-events: none;
-}
+#feverOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255, 77, 109, 0.4) 0%, transparent 100%); opacity: 0; transition: opacity 0.5s; z-index: 1; pointer-events: none; }
 .fever-active #feverOverlay { opacity: 1; animation: pulseFever 1s infinite alternate; }
 @keyframes pulseFever { from { opacity: 0.3; } to { opacity: 0.7; } }
-
 .bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 110%; object-fit: cover; z-index: 0; pointer-events: none; }
 .cloud { position: absolute; background-size: contain; background-repeat: no-repeat; z-index: 2; opacity: 0.6; pointer-events: none; }
-
 .player { position: absolute; bottom: 40px; width: 90px; height: 90px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 10; filter: drop-shadow(0 10px 4px rgba(0,0,0,0.5)); }
 .falling { position: absolute; width: 60px; height: 60px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 5; }
 .score { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 50px; color: white; z-index: 50; text-shadow: 3px 3px 0px rgba(255, 77, 109, 0.5); }
 .health { position: absolute; top: 60px; right: 20px; display: flex; gap: 5px; z-index: 50; }
 .health img { width: 30px; height: 30px; image-rendering: pixelated; }
-
-#feverBanner { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); font-size: 32px; color: #ffeb3b; text-shadow: 3px 3px 0 #000; z-index: 50; display: none; animation: flashText 0.5s infinite; }
+#feverBanner { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); font-size: 32px; color: #ffeb3b; text-shadow: 3px 3px 0 #000; z-index: 50; display: none; }
 .popup { position: absolute; font-size: 30px; color: #ffeb3b; text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 60; animation: floatUp 0.8s forwards; }
-
 .flash { animation: blink 0.1s infinite; }
 @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-.shake { animation: screenShake 0.3s; }
 @keyframes screenShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
 </style>
 </head>
 <body>
 
-<div id="loadingPage" class="page">
+<div id="introLoading">
     <img src="sprites/Bella16bit.gif" class="loading-bella">
     <div class="loading-text">LOADING...</div>
 </div>
@@ -136,21 +110,12 @@ h1 {
     <h2 style="color:white; margin-top:0;">Hey Baby, Happy Valentines Day!!!!</h2>
     <p>I know this is your first valentines having a valentine (me, hehe) so I wanted to make something special so you can remember this day whenever u get bored. It's not much but I hope you have fun!!!!!</p>
     
-    <div class="wiggle-container">
+    <div>
       <span class="wiggle" style="animation-delay: 0s;">I</span>
       <span class="wiggle" style="animation-delay: 0.1s;">love</span>
       <span class="wiggle" style="animation-delay: 0.2s;">youuu!!</span>
-    </div><br>
-    <div class="wiggle-container">
-      <span class="wiggle" style="animation-delay: 0.3s;">Te</span>
-      <span class="wiggle" style="animation-delay: 0.4s;">Amo!!!!!!!</span>
-    </div><br>
-    <div class="wiggle-container">
-      <span class="wiggle" style="animation-delay: 0.5s;">Volim</span>
-      <span class="wiggle" style="animation-delay: 0.6s;">te!!!!!!!!!!</span>
     </div>
   </div>
-  <p style="color:white; font-size: 14px; opacity: 0.8;">(Combo 10 items for FEVER MODE!)</p>
   <div class="play-btn" id="startBtnGame">START</div>
 </div>
 
@@ -165,7 +130,7 @@ h1 {
   </div>
 </div>
 
-<div class="page" id="gameOverPage" style="background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);">
+<div class="page" id="gameOverPage" style="background:rgba(0,0,0,0.9);">
   <h1 style="color:#ff4d6d;">GAME OVER</h1>
   <p id="finalScore" style="color:white; font-size:24px;"></p>
   <div class="play-btn" id="retryBtn">RETRY</div>
@@ -187,11 +152,6 @@ h1 {
         items: ["sprites/BlueFlower.png", "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png", "sprites/Flower1.png", "sprites/Mango.png", "sprites/Racoon.png"]
     };
 
-    let playerX = window.innerWidth / 2 - 45, targetX = playerX;
-    let score=0, health=3, combo=0, isFever=false, isImmune=false, isGameOver=false;
-    let fallingItems=[], clouds=[];
-    let speedFall=4, spawnInterval, feverTimer=null, immunityTimer=null;
-
     const snd = {
         pickup: document.getElementById("pickupSound"),
         hurt: document.getElementById("hurtSound"),
@@ -201,65 +161,37 @@ h1 {
         note: document.getElementById("noteMusic")
     };
 
-    const playerEl = document.getElementById("player");
-    const gameContainer = document.getElementById("game");
-    playerEl.style.backgroundImage = `url(${ASSETS.player})`;
+    let playerX = window.innerWidth/2-45, targetX = playerX;
+    let score=0, health=3, combo=0, isFever=false, isImmune=false, isGameOver=false;
+    let fallingItems=[], clouds=[], speedFall=4, spawnInterval;
 
-    // STARTUP LOADING LOGIC
+    // --- INITIAL LOADING TRANSITION ---
     window.addEventListener('load', () => {
         setTimeout(() => {
-            const lp = document.getElementById('loadingPage');
-            const tp = document.getElementById('titlePage');
-            
-            // Create cool burst particles
-            for(let i=0; i<30; i++) {
+            const intro = document.getElementById('introLoading');
+            // Particle Burst
+            for(let i=0; i<20; i++) {
                 const p = document.createElement('div');
-                p.className = 'particle';
-                p.innerHTML = Math.random() > 0.5 ? "❤️" : "✨";
+                p.className = 'particle'; p.innerHTML = "❤️";
                 p.style.left = "50%"; p.style.top = "50%";
-                p.style.setProperty('--dx', (Math.random()*600-300) + 'px');
-                p.style.setProperty('--dy', (Math.random()*600-300) + 'px');
+                p.style.setProperty('--dx', (Math.random()*400-200) + 'px');
+                p.style.setProperty('--dy', (Math.random()*400-200) + 'px');
                 document.body.appendChild(p);
                 setTimeout(() => p.remove(), 1000);
             }
-
-            lp.classList.add('fade-out');
-            tp.classList.add('active');
-            setTimeout(() => lp.style.display = 'none', 600);
+            intro.style.opacity = '0';
+            setTimeout(() => { intro.style.display = 'none'; slideTo("titlePage"); }, 500);
         }, 2000);
     });
 
-    async function unlockAudioSequentially() {
-        const keys = Object.keys(snd);
-        for (const key of keys) {
-            const audio = snd[key];
-            if (audio) {
-                audio.muted = true; 
-                try {
-                    await audio.play();
-                    audio.pause();
-                    audio.currentTime = 0;
-                } catch(e) {}
-                audio.muted = false;
-                await new Promise(r => setTimeout(r, 50)); 
+    // --- AUDIO WARMUP LOGIC ---
+    function primeAudio() {
+        Object.values(snd).forEach(a => {
+            if(a) {
+                a.muted = true;
+                a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(()=>{});
             }
-        }
-    }
-
-    function playSfx(audio) {
-        if(!audio) return;
-        audio.currentTime = 0;
-        audio.play().catch(e => {});
-    }
-
-    function toggleFullscreen() {
-        let doc = document.documentElement;
-        try {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                let rfs = doc.requestFullscreen || doc.webkitRequestFullscreen;
-                if(rfs) rfs.call(doc);
-            }
-        } catch(e) {}
+        });
     }
 
     function slideTo(id) {
@@ -268,60 +200,62 @@ h1 {
     }
 
     const setupBtn = (id, fn) => {
-        const btn = document.getElementById(id);
-        const handle = (e) => { e.preventDefault(); fn(); };
-        btn.addEventListener('click', handle);
-        btn.addEventListener('touchend', handle);
+        const b = document.getElementById(id);
+        b.addEventListener('click', fn);
+        b.addEventListener('touchend', (e) => { e.preventDefault(); fn(); });
     };
 
-    setupBtn('fsBtn', toggleFullscreen);
-    
-    setupBtn('playBtnTitle', async () => {
-        const btn = document.getElementById('playBtnTitle');
-        const oldText = btn.innerText;
-        btn.innerText = "STARTING...";
-        await unlockAudioSequentially();
-        playSfx(snd.btn);
+    // --- BUTTON CLICKS ---
+    setupBtn('playBtnTitle', () => {
+        primeAudio(); // Initial nudge for browser
+        snd.btn.play().catch(()=>{});
+        // Start Note Music
         setTimeout(() => {
-            snd.note.play().catch(() => {});
+            snd.note.volume = 1;
+            snd.note.play().catch(e => console.log("Note blocked"));
             slideTo("notePage");
-            btn.innerText = oldText;
         }, 100);
     });
 
     setupBtn('startBtnGame', () => {
-        playSfx(snd.start);
-        if(snd.note) snd.note.pause();
+        const btn = document.getElementById('startBtnGame');
+        btn.innerText = "LOADING...";
+        
+        // Final warm up for game sounds
+        primeAudio(); 
+
         setTimeout(() => {
-            if(snd.game) {
-                snd.game.currentTime = 0;
-                snd.game.play().catch(() => {});
-            }
-            try { toggleFullscreen(); } catch(e){}
+            btn.innerText = "START";
+            if(snd.note) snd.note.pause();
+            snd.start.play().catch(()=>{});
+            snd.game.play().catch(()=>{});
             slideTo("gamePage");
             initGame();
-        }, 100);
+        }, 1000); // 1 second "loader" on the start button
     });
 
     setupBtn('retryBtn', () => {
-        playSfx(snd.btn);
-        if(snd.game) {
-            snd.game.currentTime = 0;
-            snd.game.play().catch(()=>{});
-        }
+        snd.game.currentTime = 0;
+        snd.game.play().catch(()=>{});
         slideTo("gamePage");
         initGame();
     });
 
+    setupBtn('fsBtn', () => {
+        let doc = document.documentElement;
+        if (!document.fullscreenElement) doc.requestFullscreen?.() || doc.webkitRequestFullscreen?.();
+    });
+
+    // --- GAME ENGINE ---
+    const playerEl = document.getElementById("player");
+    const gameContainer = document.getElementById("game");
+    playerEl.style.backgroundImage = `url(${ASSETS.player})`;
+
     function initGame(){
-      score=0; health=3; combo=0; isGameOver=false; speedFall=4; isImmune=false;
-      if(immunityTimer) clearTimeout(immunityTimer);
-      stopFever();
-      playerEl.classList.remove("flash");
+      score=0; health=3; combo=0; isGameOver=false; speedFall=4;
       document.getElementById("scoreDisp").textContent=0;
       updateHealthUI();
-      fallingItems.forEach(i=>i.el.remove());
-      fallingItems=[];
+      fallingItems.forEach(i=>i.el.remove()); fallingItems=[];
       clearInterval(spawnInterval);
       spawnInterval = setInterval(spawnItem, 800);
     }
@@ -331,39 +265,8 @@ h1 {
       hDisp.innerHTML="";
       for(let i=0; i<health; i++){
         const img=document.createElement("img");
-        img.src=ASSETS.heart;
-        hDisp.appendChild(img);
+        img.src=ASSETS.heart; hDisp.appendChild(img);
       }
-    }
-
-    function triggerDamage() {
-        if(isImmune || isGameOver) return;
-        health--;
-        updateHealthUI();
-        playSfx(snd.hurt);
-        gameContainer.classList.add("shake");
-        setTimeout(() => gameContainer.classList.remove("shake"), 300);
-        if(health <= 0) gameOver();
-        else {
-            isImmune = true;
-            playerEl.classList.add("flash");
-            immunityTimer = setTimeout(() => { isImmune = false; playerEl.classList.remove("flash"); }, 1500);
-        }
-    }
-
-    function startFever() {
-        isFever = true;
-        gameContainer.classList.add("fever-active");
-        document.getElementById("feverBanner").style.display = "block";
-        if(feverTimer) clearTimeout(feverTimer);
-        feverTimer = setTimeout(() => stopFever(), 10000);
-    }
-
-    function stopFever() {
-        isFever = false;
-        combo = 0;
-        gameContainer.classList.remove("fever-active");
-        document.getElementById("feverBanner").style.display = "none";
     }
 
     function spawnItem(){
@@ -371,14 +274,12 @@ h1 {
       const item=document.createElement("div");
       item.classList.add("falling");
       const rng = Math.random();
-      let type = "normal";
-      let img = ASSETS.items[Math.floor(Math.random()*ASSETS.items.length)];
+      let type = "normal", img = ASSETS.items[Math.floor(Math.random()*ASSETS.items.length)];
       if(rng < 0.15) { type = "bomb"; img = ASSETS.bomb; }
       else if(rng < 0.22 && health < 3) { type = "heart"; img = ASSETS.heart; }
       item.style.backgroundImage = `url(${img})`;
       const x = Math.random()*(window.innerWidth-60);
-      item.style.left = x + "px";
-      item.style.top = "-70px";
+      item.style.left = x + "px"; item.style.top = "-70px";
       gameContainer.appendChild(item);
       fallingItems.push({el:item, y:-70, x: x, type: type});
     }
@@ -386,82 +287,41 @@ h1 {
     window.addEventListener("touchmove", e => { targetX = e.touches[0].clientX - 45; }, {passive: true});
     window.addEventListener("mousemove", e => targetX = e.clientX - 45);
 
-    function spawnCloud(randomX = false) {
-        const c = document.createElement("div");
-        c.className = "cloud";
-        const img = ASSETS.clouds[Math.floor(Math.random()*ASSETS.clouds.length)];
-        c.style.backgroundImage = `url(${img})`;
-        c.style.width = (150 + Math.random() * 100) + "px";
-        c.style.height = "80px";
-        c.style.top = (Math.random() * 40) + "%";
-        let x = randomX ? (Math.random() * window.innerWidth) : -250;
-        c.style.left = x + "px";
-        gameContainer.appendChild(c);
-        clouds.push({ el: c, x: x, speed: 0.2 + Math.random() * 0.4 });
-    }
-
     function update() {
       if(!isGameOver && document.getElementById("gamePage").classList.contains("active")){
-        let dx = targetX - playerX;
-        playerX += dx * 0.15;
+        playerX += (targetX - playerX) * 0.15;
         playerEl.style.left = playerX + "px";
-        if(Math.abs(dx) > 1) playerEl.style.transform = dx > 0 ? "scaleX(1)" : "scaleX(-1)";
-
-        if(clouds.length < 5) spawnCloud();
-        for(let i=clouds.length-1; i>=0; i--){
-            let c = clouds[i];
-            c.x += c.speed;
-            c.el.style.left = c.x + "px";
-            if(c.x > window.innerWidth + 250) { c.el.remove(); clouds.splice(i, 1); }
-        }
 
         for(let i=fallingItems.length-1; i>=0; i--){
-          let item = fallingItems[i];
-          if(isFever && item.type !== "bomb") {
-              let dist = (playerX + 45) - (item.x + 30);
-              if(Math.abs(dist) < 220) { item.x += dist * 0.05; item.el.style.left = item.x + "px"; }
-          }
-          item.y += isFever ? speedFall * 1.5 : speedFall;
-          item.el.style.top = item.y + "px";
-          const iRect = item.el.getBoundingClientRect();
-          const pRect = playerEl.getBoundingClientRect();
+          let itm = fallingItems[i];
+          itm.y += speedFall; itm.el.style.top = itm.y + "px";
+          const iR = itm.el.getBoundingClientRect(), pR = playerEl.getBoundingClientRect();
 
-          if(iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom - 10 && iRect.left < pRect.right - 20 && iRect.right > pRect.left + 20){
-            if(item.type === "bomb") { triggerDamage(); spawnPopup("💥", iRect.left, iRect.top); }
-            else if(item.type === "heart") { health = Math.min(3, health+1); updateHealthUI(); playSfx(snd.start); spawnPopup("❤️", iRect.left, iRect.top); }
-            else { 
-                score += isFever ? 2 : 1; combo++; document.getElementById("scoreDisp").textContent = score;
-                playSfx(snd.pickup); spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
-                if(combo >= 10 && !isFever) startFever();
+          if(iR.bottom > pR.top + 20 && iR.top < pR.bottom - 10 && iR.left < pR.right - 20 && iR.right > pR.left + 20){
+            if(itm.type === "bomb") { 
+                health--; updateHealthUI(); snd.hurt.play().catch(()=>{}); 
+                if(health <= 0) gameOver();
+            } else if(itm.type === "heart") {
+                health = Math.min(3, health+1); updateHealthUI();
+            } else {
+                score++; document.getElementById("scoreDisp").textContent = score;
+                snd.pickup.currentTime=0; snd.pickup.play().catch(()=>{});
                 speedFall += 0.02;
             }
-            item.el.remove(); fallingItems.splice(i,1);
-          } 
-          else if(item.y > window.innerHeight) {
-            if(item.type === "normal" && !isFever) { triggerDamage(); combo = 0; }
-            item.el.remove(); fallingItems.splice(i,1);
+            itm.el.remove(); fallingItems.splice(i,1);
+          } else if(itm.y > window.innerHeight) {
+            itm.el.remove(); fallingItems.splice(i,1);
           }
         }
       }
       requestAnimationFrame(update);
     }
 
-    function spawnPopup(text, x, y) {
-      const p = document.createElement("div");
-      p.className = "popup"; p.textContent = text;
-      p.style.left = x + "px"; p.style.top = y + "px";
-      gameContainer.appendChild(p);
-      setTimeout(() => p.remove(), 800);
-    }
-
     function gameOver(){
-      isGameOver = true;
-      if(snd.game) snd.game.pause();
+      isGameOver = true; snd.game.pause();
       document.getElementById("finalScore").textContent="Final Score: " + score;
       slideTo("gameOverPage");
     }
-    
-    for(let i=0; i<4; i++) spawnCloud(true);
     update();
 </script>
 </body>
