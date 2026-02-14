@@ -71,6 +71,8 @@ h1 {
 @keyframes pulseFever { from { opacity: 0.3; } to { opacity: 0.7; } }
 
 .bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 110%; object-fit: cover; z-index: 0; pointer-events: none; }
+.cloud { position: absolute; background-size: contain; background-repeat: no-repeat; z-index: 2; opacity: 0.6; pointer-events: none; }
+
 .player { position: absolute; bottom: 40px; width: 90px; height: 90px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 10; filter: drop-shadow(0 10px 4px rgba(0,0,0,0.5)); }
 .falling { position: absolute; width: 60px; height: 60px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 5; }
 .score { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 50px; color: white; z-index: 50; text-shadow: 3px 3px 0px rgba(255, 77, 109, 0.5); }
@@ -148,12 +150,13 @@ h1 {
         player: "sprites/Bella16bit.gif",
         heart: "sprites/Heart.png",
         bomb: "sprites/Bomb.png",
+        clouds: ["sprites/cloud1.png", "sprites/cloud2.png", "sprites/cloud3.png"],
         items: ["sprites/BlueFlower.png", "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png", "sprites/Flower1.png", "sprites/Mango.png", "sprites/Racoon.png"]
     };
 
     let playerX = window.innerWidth / 2 - 45, targetX = playerX;
     let score=0, health=3, combo=0, isFever=false, isImmune=false, isGameOver=false;
-    let fallingItems=[];
+    let fallingItems=[], clouds=[];
     let speedFall=4, spawnInterval, feverTimer=null, immunityTimer=null;
 
     const playerEl = document.getElementById("player");
@@ -170,11 +173,26 @@ h1 {
         note: document.getElementById("noteMusic")
     };
 
+    // Pre-loading helper: Forces the browser to load and "warm up" the audio
+    function preloadSounds() {
+        Object.values(snd).forEach(audio => {
+            if(audio) {
+                audio.load();
+                // Play and immediately pause to "unlock" the audio context for mobile
+                let p = audio.play();
+                if(p !== undefined) {
+                    p.then(() => { audio.pause(); audio.currentTime = 0; })
+                     .catch(() => { /* expected on some browsers */ });
+                }
+            }
+        });
+    }
+
     function playSfx(audio) {
         if(!audio) return;
         audio.pause();
         audio.currentTime = 0;
-        audio.play().catch(e => console.log("SFX blocked"));
+        audio.play().catch(e => console.log("SFX play failed"));
     }
 
     function toggleFullscreen() {
@@ -195,7 +213,20 @@ h1 {
         document.getElementById(id).classList.add("active");
     }
 
-    // --- BUTTON EVENT LISTENERS (CRITICAL FOR MOBILE) ---
+    function spawnCloud(randomX = false) {
+        const c = document.createElement("div");
+        c.className = "cloud";
+        const img = ASSETS.clouds[Math.floor(Math.random()*ASSETS.clouds.length)];
+        c.style.backgroundImage = `url(${img})`;
+        c.style.width = (150 + Math.random() * 100) + "px";
+        c.style.height = "80px";
+        c.style.top = (Math.random() * 40) + "%"; // Fly in top 40% of screen
+        let x = randomX ? (Math.random() * window.innerWidth) : -250;
+        c.style.left = x + "px";
+        gameContainer.appendChild(c);
+        clouds.push({ el: c, x: x, speed: 0.2 + Math.random() * 0.4 }); // Very slow
+    }
+
     const setupBtn = (id, fn) => {
         const btn = document.getElementById(id);
         btn.addEventListener('click', fn);
@@ -205,16 +236,19 @@ h1 {
     setupBtn('fsBtn', toggleFullscreen);
     
     setupBtn('playBtnTitle', () => {
+        preloadSounds(); // Unlock audio on first real interaction
         playSfx(snd.btn);
-        snd.note.play().catch(()=>{});
+        if(snd.note) snd.note.play().catch(()=>{});
         slideTo("notePage");
     });
 
     setupBtn('startBtnGame', () => {
         playSfx(snd.start);
-        snd.note.pause();
-        snd.game.currentTime = 0;
-        snd.game.play().catch(()=>{});
+        if(snd.note) snd.note.pause();
+        if(snd.game) {
+            snd.game.currentTime = 0;
+            snd.game.play().catch(()=>{});
+        }
         try { toggleFullscreen(); } catch(e){}
         slideTo("gamePage");
         initGame();
@@ -222,8 +256,10 @@ h1 {
 
     setupBtn('retryBtn', () => {
         playSfx(snd.btn);
-        snd.game.currentTime = 0;
-        snd.game.play().catch(()=>{});
+        if(snd.game) {
+            snd.game.currentTime = 0;
+            snd.game.play().catch(()=>{});
+        }
         slideTo("gamePage");
         initGame();
     });
@@ -308,6 +344,15 @@ h1 {
         playerEl.style.left = playerX + "px";
         if(Math.abs(dx) > 1) playerEl.style.transform = dx > 0 ? "scaleX(1)" : "scaleX(-1)";
 
+        // Handle clouds
+        if(clouds.length < 5) spawnCloud();
+        for(let i=clouds.length-1; i>=0; i--){
+            let c = clouds[i];
+            c.x += c.speed;
+            c.el.style.left = c.x + "px";
+            if(c.x > window.innerWidth + 250) { c.el.remove(); clouds.splice(i, 1); }
+        }
+
         for(let i=fallingItems.length-1; i>=0; i--){
           let item = fallingItems[i];
           if(isFever && item.type !== "bomb") {
@@ -324,7 +369,7 @@ h1 {
             else if(item.type === "heart") { 
                 health = Math.min(3, health+1); 
                 updateHealthUI(); 
-                playSfx(snd.start); // Heart uses start audio
+                playSfx(snd.start); 
                 spawnPopup("❤️", iRect.left, iRect.top); 
             }
             else { 
@@ -355,11 +400,13 @@ h1 {
 
     function gameOver(){
       isGameOver = true;
-      snd.game.pause();
+      if(snd.game) snd.game.pause();
       document.getElementById("finalScore").textContent="Final Score: " + score;
       slideTo("gameOverPage");
     }
     
+    // Initial clouds
+    for(let i=0; i<4; i++) spawnCloud(true);
     update();
 </script>
 </body>
