@@ -21,9 +21,10 @@ html, body {
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   text-align: center; padding: 25px; box-sizing: border-box; z-index: 100;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-transition: -webkit-transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   visibility: hidden;
 }
-.page.active { transform: translateX(-100%); visibility: visible; }
+.page.active { transform: translateX(-100%); -webkit-transform: translateX(-100%); visibility: visible; }
 
 /* INITIAL LOADING SCREEN */
 #introLoading { 
@@ -32,12 +33,12 @@ html, body {
     flex-direction: column; justify-content: center; align-items: center;
 }
 .loading-bella { width: 100px; height: 100px; image-rendering: pixelated; margin-bottom: 20px; }
-.loading-text { color: #ff8fb1; font-size: 20px; letter-spacing: 4px; animation: pulse 1s infinite; }
+.loading-text { color: #ff8fb1; font-size: 20px; letter-spacing: 4px; animation: pulse 1s infinite; -webkit-animation: pulse 1s infinite; }
 
 /* TRANSITION PARTICLES */
 .particle {
     position: absolute; pointer-events: none; z-index: 500;
-    font-size: 24px; animation: particleAnim 1s forwards ease-out;
+    font-size: 24px; animation: particleAnim 1s forwards ease-out; -webkit-animation: particleAnim 1s forwards ease-out;
 }
 @keyframes particleAnim {
     0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
@@ -46,8 +47,7 @@ html, body {
 
 /* TITLE PAGE STYLING */
 #titlePage { background: linear-gradient(to bottom, #1a1a40 0%, #4a1d4d 100%); }
-#titlePage.active h1 { animation: slideIn 0.8s ease-out forwards; }
-#titlePage.active .instruction { animation: slideIn 1s ease-out forwards; }
+#titlePage.active h1 { animation: slideIn 0.8s ease-out forwards; -webkit-animation: slideIn 0.8s ease-out forwards; }
 
 @keyframes slideIn { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -60,7 +60,7 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
 .fs-toggle { color: #ffc2d1; font-size: 12px; margin-bottom: 20px; text-decoration: underline; cursor: pointer; }
 .valentine-msg { color: #ffc2d1; font-size: 18px; line-height: 1.5; margin-bottom: 30px; }
 .wiggle-container { display: inline-block; margin-top: 10px; }
-.wiggle { display: inline-block; animation: wiggleAnim 0.3s infinite alternate ease-in-out; color: #ff4d6d; font-size: 24px; font-weight: bold; }
+.wiggle { display: inline-block; animation: wiggleAnim 0.3s infinite alternate ease-in-out; -webkit-animation: wiggleAnim 0.3s infinite alternate ease-in-out; color: #ff4d6d; font-size: 24px; font-weight: bold; }
 @keyframes wiggleAnim { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
 .play-btn {
@@ -70,25 +70,24 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
     text-transform: uppercase; letter-spacing: 2px; margin: 10px auto;
     display: block; width: fit-content;
 }
-.play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c02a46; }
+.play-btn:active { transform: translateY(4px); -webkit-transform: translateY(4px); box-shadow: 0 2px 0 #c02a46; }
 
 /* ---------- GAME AREA ---------- */
 #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #202040; }
-#feverOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255, 77, 109, 0.4) 0%, transparent 100%); opacity: 0; transition: opacity 0.5s; z-index: 1; pointer-events: none; }
-.fever-active #feverOverlay { opacity: 1; animation: pulseFever 1s infinite alternate; }
-@keyframes pulseFever { from { opacity: 0.3; } to { opacity: 0.7; } }
 .bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 110%; object-fit: cover; z-index: 0; pointer-events: none; }
-.cloud { position: absolute; background-size: contain; background-repeat: no-repeat; z-index: 2; opacity: 0.6; pointer-events: none; }
-.player { position: absolute; bottom: 40px; width: 90px; height: 90px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 10; filter: drop-shadow(0 10px 4px rgba(0,0,0,0.5)); }
+.player { position: absolute; bottom: 40px; width: 90px; height: 90px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 10; filter: drop-shadow(0 10px 4px rgba(0,0,0,0.5)); transition: transform 0.1s; }
 .falling { position: absolute; width: 60px; height: 60px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; z-index: 5; }
 .score { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 50px; color: white; z-index: 50; text-shadow: 3px 3px 0px rgba(255, 77, 109, 0.5); }
 .health { position: absolute; top: 60px; right: 20px; display: flex; gap: 5px; z-index: 50; }
 .health img { width: 30px; height: 30px; image-rendering: pixelated; }
-#feverBanner { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); font-size: 32px; color: #ffeb3b; text-shadow: 3px 3px 0 #000; z-index: 50; display: none; }
-.popup { position: absolute; font-size: 30px; color: #ffeb3b; text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 60; animation: floatUp 0.8s forwards; }
-.flash { animation: blink 0.1s infinite; }
+
+/* SHAKE ANIMATION */
+.shake { animation: screenShake 0.3s; -webkit-animation: screenShake 0.3s; }
+@keyframes screenShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+@-webkit-keyframes screenShake { 0%, 100% { -webkit-transform: translateX(0); } 25% { -webkit-transform: translateX(-10px); } 75% { -webkit-transform: translateX(10px); } }
+
+.flash { animation: blink 0.1s infinite; -webkit-animation: blink 0.1s infinite; }
 @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-@keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
 </style>
 </head>
 <body>
@@ -129,10 +128,8 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
 
 <div class="page" id="gamePage">
   <div id="game">
-    <div id="feverOverlay"></div>
     <img class="bg" src="bg.png" onerror="this.style.display='none'">
     <div class="score" id="scoreDisp">0</div>
-    <div id="feverBanner">FEVER MODE!!</div>
     <div class="health" id="healthDisp"></div>
     <div class="player" id="player"></div>
   </div>
@@ -156,7 +153,6 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
         player: "sprites/Bella16bit.gif",
         heart: "sprites/Heart.png",
         bomb: "sprites/Bomb.png",
-        clouds: ["sprites/cloud1.png", "sprites/cloud2.png", "sprites/cloud3.png"],
         items: ["sprites/BlueFlower.png", "sprites/CatWhite.png", "sprites/Dog.png", "sprites/Dumpling.png", "sprites/Flower1.png", "sprites/Mango.png", "sprites/Racoon.png"]
     };
 
@@ -170,21 +166,13 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
     };
 
     let playerX = window.innerWidth/2-45, targetX = playerX;
-    let score=0, health=3, isGameOver=false;
-    let fallingItems=[], clouds=[], speedFall=4, spawnInterval;
+    let score=0, health=3, isGameOver=false, isImmune=false;
+    let fallingItems=[], speedFall=4, spawnInterval;
 
+    // --- INITIAL LOADING ---
     window.addEventListener('load', () => {
         setTimeout(() => {
             const intro = document.getElementById('introLoading');
-            for(let i=0; i<20; i++) {
-                const p = document.createElement('div');
-                p.className = 'particle'; p.innerHTML = "❤️";
-                p.style.left = "50%"; p.style.top = "50%";
-                p.style.setProperty('--dx', (Math.random()*400-200) + 'px');
-                p.style.setProperty('--dy', (Math.random()*400-200) + 'px');
-                document.body.appendChild(p);
-                setTimeout(() => p.remove(), 1000);
-            }
             intro.style.opacity = '0';
             setTimeout(() => { intro.style.display = 'none'; slideTo("titlePage"); }, 500);
         }, 2000);
@@ -201,6 +189,29 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
         document.getElementById(id).classList.add("active");
     }
 
+    function triggerDamage() {
+        if(isImmune || isGameOver) return;
+        health--;
+        updateHealthUI();
+        snd.hurt.play().catch(()=>{});
+        
+        // Safari-friendly Screen Shake
+        const gameEl = document.getElementById("game");
+        gameEl.classList.remove("shake");
+        void gameEl.offsetWidth; // Force reflow
+        gameEl.classList.add("shake");
+        
+        if(health <= 0) gameOver();
+        else {
+            isImmune = true;
+            document.getElementById("player").classList.add("flash");
+            setTimeout(() => {
+                isImmune = false;
+                document.getElementById("player").classList.remove("flash");
+            }, 1500);
+        }
+    }
+
     const setupBtn = (id, fn) => {
         const b = document.getElementById(id);
         b.addEventListener('click', fn);
@@ -211,7 +222,7 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
         primeAudio();
         snd.btn.play().catch(()=>{});
         setTimeout(() => {
-            snd.note.volume = 1; snd.note.play().catch(()=>{});
+            snd.note.play().catch(()=>{});
             slideTo("notePage");
         }, 100);
     });
@@ -236,17 +247,12 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
         initGame();
     });
 
-    setupBtn('fsBtn', () => {
-        let doc = document.documentElement;
-        if (!document.fullscreenElement) doc.requestFullscreen?.() || doc.webkitRequestFullscreen?.();
-    });
-
     const playerEl = document.getElementById("player");
     const gameContainer = document.getElementById("game");
     playerEl.style.backgroundImage = `url(${ASSETS.player})`;
 
     function initGame(){
-      score=0; health=3; isGameOver=false; speedFall=4;
+      score=0; health=3; isGameOver=false; speedFall=4; isImmune=false;
       document.getElementById("scoreDisp").textContent=0;
       updateHealthUI();
       fallingItems.forEach(i=>i.el.remove()); fallingItems=[];
@@ -283,16 +289,26 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
 
     function update() {
       if(!isGameOver && document.getElementById("gamePage").classList.contains("active")){
-        playerX += (targetX - playerX) * 0.15;
+        let dx = targetX - playerX;
+        playerX += dx * 0.15;
         playerEl.style.left = playerX + "px";
+        
+        // FLIP LOGIC
+        if(Math.abs(dx) > 1) {
+            let scale = dx > 0 ? "scaleX(1)" : "scaleX(-1)";
+            playerEl.style.transform = scale;
+            playerEl.style.webkitTransform = scale;
+        }
+
         for(let i=fallingItems.length-1; i>=0; i--){
           let itm = fallingItems[i];
           itm.y += speedFall; itm.el.style.top = itm.y + "px";
           const iR = itm.el.getBoundingClientRect(), pR = playerEl.getBoundingClientRect();
+
+          // COLLISION
           if(iR.bottom > pR.top + 20 && iR.top < pR.bottom - 10 && iR.left < pR.right - 20 && iR.right > pR.left + 20){
             if(itm.type === "bomb") { 
-                health--; updateHealthUI(); snd.hurt.play().catch(()=>{}); 
-                if(health <= 0) gameOver();
+                triggerDamage(); 
             } else if(itm.type === "heart") {
                 health = Math.min(3, health+1); updateHealthUI();
             } else {
@@ -301,7 +317,12 @@ h1 { font-size: 52px; color: #ff8fb1; margin-bottom: 20px; letter-spacing: 4px; 
                 speedFall += 0.02;
             }
             itm.el.remove(); fallingItems.splice(i,1);
-          } else if(itm.y > window.innerHeight) { itm.el.remove(); fallingItems.splice(i,1); }
+          } 
+          // DAMAGE ON MISS
+          else if(itm.y > window.innerHeight) {
+            if(itm.type === "normal") { triggerDamage(); }
+            itm.el.remove(); fallingItems.splice(i,1);
+          }
         }
       }
       requestAnimationFrame(update);
