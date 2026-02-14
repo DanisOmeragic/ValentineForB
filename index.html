@@ -138,12 +138,12 @@ h1 {
   <div class="play-btn" id="retryBtn">RETRY</div>
 </div>
 
-<audio id="noteMusic" src="audio/note.wav" loop></audio>
-<audio id="startChime" src="audio/start.wav"></audio>
-<audio id="gameMusic" src="audio/game.wav" loop></audio>
-<audio id="pickupSound" src="audio/pickup.wav"></audio>
-<audio id="hurtSound" src="audio/hurt.wav"></audio>
-<audio id="buttonSound" src="audio/button.wav"></audio>
+<audio id="noteMusic" src="audio/note.wav" loop preload="auto"></audio>
+<audio id="startChime" src="audio/start.wav" preload="auto"></audio>
+<audio id="gameMusic" src="audio/game.wav" loop preload="auto"></audio>
+<audio id="pickupSound" src="audio/pickup.wav" preload="auto"></audio>
+<audio id="hurtSound" src="audio/hurt.wav" preload="auto"></audio>
+<audio id="buttonSound" src="audio/button.wav" preload="auto"></audio>
 
 <script>
     const ASSETS = {
@@ -159,11 +159,6 @@ h1 {
     let fallingItems=[], clouds=[];
     let speedFall=4, spawnInterval, feverTimer=null, immunityTimer=null;
 
-    const playerEl = document.getElementById("player");
-    const gameContainer = document.getElementById("game");
-    const feverBanner = document.getElementById("feverBanner");
-    playerEl.style.backgroundImage = `url(${ASSETS.player})`;
-
     const snd = {
         pickup: document.getElementById("pickupSound"),
         hurt: document.getElementById("hurtSound"),
@@ -173,25 +168,33 @@ h1 {
         note: document.getElementById("noteMusic")
     };
 
-    // Pre-loading helper: Silent unlock for mobile
-    function preloadSounds() {
-        Object.values(snd).forEach(audio => {
-            if(audio) {
-                audio.volume = 0; // Mute first!
-                audio.play().then(() => {
+    const playerEl = document.getElementById("player");
+    const gameContainer = document.getElementById("game");
+    playerEl.style.backgroundImage = `url(${ASSETS.player})`;
+
+    // Sequence the "Unlocking" so browser doesn't break
+    async function unlockAudioSequentially() {
+        const keys = Object.keys(snd);
+        for (const key of keys) {
+            const audio = snd[key];
+            if (audio) {
+                audio.muted = true; 
+                try {
+                    await audio.play();
                     audio.pause();
                     audio.currentTime = 0;
-                    audio.volume = 1.0; // Reset volume back to full
-                }).catch(e => {});
+                } catch(e) {}
+                audio.muted = false;
+                // Tiny yield so the browser can breathe
+                await new Promise(r => setTimeout(r, 50)); 
             }
-        });
+        }
     }
 
     function playSfx(audio) {
         if(!audio) return;
-        audio.pause();
         audio.currentTime = 0;
-        audio.play().catch(e => console.log("SFX play failed"));
+        audio.play().catch(e => {});
     }
 
     function toggleFullscreen() {
@@ -200,11 +203,8 @@ h1 {
             if (!document.fullscreenElement && !document.webkitFullscreenElement) {
                 let rfs = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
                 if(rfs) rfs.call(doc);
-            } else {
-                let efs = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-                if(efs) efs.call(document);
             }
-        } catch(e) { console.log("FS blocked"); }
+        } catch(e) {}
     }
 
     function slideTo(id) {
@@ -212,48 +212,45 @@ h1 {
         document.getElementById(id).classList.add("active");
     }
 
-    function spawnCloud(randomX = false) {
-        const c = document.createElement("div");
-        c.className = "cloud";
-        const img = ASSETS.clouds[Math.floor(Math.random()*ASSETS.clouds.length)];
-        c.style.backgroundImage = `url(${img})`;
-        c.style.width = (150 + Math.random() * 100) + "px";
-        c.style.height = "80px";
-        c.style.top = (Math.random() * 40) + "%";
-        let x = randomX ? (Math.random() * window.innerWidth) : -250;
-        c.style.left = x + "px";
-        gameContainer.appendChild(c);
-        clouds.push({ el: c, x: x, speed: 0.2 + Math.random() * 0.4 });
-    }
-
+    // --- BUTTONS ---
     const setupBtn = (id, fn) => {
         const btn = document.getElementById(id);
-        btn.addEventListener('click', fn);
-        btn.addEventListener('touchend', (e) => { e.preventDefault(); fn(); });
+        const handle = (e) => { e.preventDefault(); fn(); };
+        btn.addEventListener('click', handle);
+        btn.addEventListener('touchend', handle);
     };
 
     setupBtn('fsBtn', toggleFullscreen);
     
-    setupBtn('playBtnTitle', () => {
-        preloadSounds(); 
+    setupBtn('playBtnTitle', async () => {
+        const btn = document.getElementById('playBtnTitle');
+        btn.innerText = "LOADING..."; // Visual feedback
+        
+        await unlockAudioSequentially();
+        
         playSfx(snd.btn);
-        // Force start Note Music immediately
-        snd.note.volume = 1.0;
-        snd.note.play().catch(e => console.log("Note music blocked"));
-        slideTo("notePage");
+        
+        // Start note music with a slight delay after unlock
+        setTimeout(() => {
+            snd.note.play().catch(() => {});
+            slideTo("notePage");
+            btn.innerText = "PLAY";
+        }, 100);
     });
 
     setupBtn('startBtnGame', () => {
         playSfx(snd.start);
         if(snd.note) snd.note.pause();
-        if(snd.game) {
-            snd.game.volume = 1.0;
-            snd.game.currentTime = 0;
-            snd.game.play().catch(e => console.log("Game music blocked"));
-        }
-        try { toggleFullscreen(); } catch(e){}
-        slideTo("gamePage");
-        initGame();
+        
+        setTimeout(() => {
+            if(snd.game) {
+                snd.game.currentTime = 0;
+                snd.game.play().catch(() => {});
+            }
+            try { toggleFullscreen(); } catch(e){}
+            slideTo("gamePage");
+            initGame();
+        }, 100);
     });
 
     setupBtn('retryBtn', () => {
@@ -266,6 +263,7 @@ h1 {
         initGame();
     });
 
+    // --- GAME LOGIC ---
     function initGame(){
       score=0; health=3; combo=0; isGameOver=false; speedFall=4; isImmune=false;
       if(immunityTimer) clearTimeout(immunityTimer);
@@ -307,7 +305,7 @@ h1 {
     function startFever() {
         isFever = true;
         gameContainer.classList.add("fever-active");
-        feverBanner.style.display = "block";
+        document.getElementById("feverBanner").style.display = "block";
         if(feverTimer) clearTimeout(feverTimer);
         feverTimer = setTimeout(() => stopFever(), 10000);
     }
@@ -316,7 +314,7 @@ h1 {
         isFever = false;
         combo = 0;
         gameContainer.classList.remove("fever-active");
-        feverBanner.style.display = "none";
+        document.getElementById("feverBanner").style.display = "none";
     }
 
     function spawnItem(){
@@ -339,6 +337,20 @@ h1 {
     window.addEventListener("touchmove", e => { targetX = e.touches[0].clientX - 45; }, {passive: true});
     window.addEventListener("mousemove", e => targetX = e.clientX - 45);
 
+    function spawnCloud(randomX = false) {
+        const c = document.createElement("div");
+        c.className = "cloud";
+        const img = ASSETS.clouds[Math.floor(Math.random()*ASSETS.clouds.length)];
+        c.style.backgroundImage = `url(${img})`;
+        c.style.width = (150 + Math.random() * 100) + "px";
+        c.style.height = "80px";
+        c.style.top = (Math.random() * 40) + "%";
+        let x = randomX ? (Math.random() * window.innerWidth) : -250;
+        c.style.left = x + "px";
+        gameContainer.appendChild(c);
+        clouds.push({ el: c, x: x, speed: 0.2 + Math.random() * 0.4 });
+    }
+
     function update() {
       if(!isGameOver && document.getElementById("gamePage").classList.contains("active")){
         let dx = targetX - playerX;
@@ -346,7 +358,6 @@ h1 {
         playerEl.style.left = playerX + "px";
         if(Math.abs(dx) > 1) playerEl.style.transform = dx > 0 ? "scaleX(1)" : "scaleX(-1)";
 
-        // Handle clouds
         if(clouds.length < 5) spawnCloud();
         for(let i=clouds.length-1; i>=0; i--){
             let c = clouds[i];
@@ -368,12 +379,7 @@ h1 {
 
           if(iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom - 10 && iRect.left < pRect.right - 20 && iRect.right > pRect.left + 20){
             if(item.type === "bomb") { triggerDamage(); spawnPopup("💥", iRect.left, iRect.top); }
-            else if(item.type === "heart") { 
-                health = Math.min(3, health+1); 
-                updateHealthUI(); 
-                playSfx(snd.start); 
-                spawnPopup("❤️", iRect.left, iRect.top); 
-            }
+            else if(item.type === "heart") { health = Math.min(3, health+1); updateHealthUI(); playSfx(snd.start); spawnPopup("❤️", iRect.left, iRect.top); }
             else { 
                 score += isFever ? 2 : 1; combo++; document.getElementById("scoreDisp").textContent = score;
                 playSfx(snd.pickup); spawnPopup(isFever ? "+2" : "+1", iRect.left, iRect.top);
@@ -393,8 +399,7 @@ h1 {
 
     function spawnPopup(text, x, y) {
       const p = document.createElement("div");
-      p.className = "popup";
-      p.textContent = text;
+      p.className = "popup"; p.textContent = text;
       p.style.left = x + "px"; p.style.top = y + "px";
       gameContainer.appendChild(p);
       setTimeout(() => p.remove(), 800);
